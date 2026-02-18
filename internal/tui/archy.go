@@ -3,10 +3,12 @@ package tui
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/sachinggsingh/archy/internal/brand"
+	"github.com/sachinggsingh/archy/internal/components/input"
+	"github.com/sachinggsingh/archy/internal/components/spinner"
 	"github.com/sachinggsingh/archy/internal/generator"
 )
 
@@ -20,49 +22,52 @@ type model struct {
 
 	project string
 
-	input string
+	input   input.Model
+	spinner spinner.Model
+
+	width  int
+	height int
 
 	quitting   bool
 	generating bool
 	done       bool
 	errMsg     string
-
-	spinFrame int
 }
 
 // base styles
 var (
+	// Consistent text color for everything
+	textColor = lipgloss.Color("252") // Light gray/white
+	
+	// Text style used throughout
+	textStyle = lipgloss.NewStyle().Foreground(textColor)
+	
+	// Screen style for fallback rendering
+	screenStyle = lipgloss.NewStyle().Foreground(textColor)
+	
+	// Banner style - colorful pink/magenta
+	bannerStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("213")).
+			Align(lipgloss.Center)
+
+	// Header style for exit messages
 	headerStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("213")) // pink
-
-	subHeaderStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("244"))
-
-	labelStyle = lipgloss.NewStyle().
-			Bold(true).
-			Foreground(lipgloss.Color("81")) // cyan
-
-	valueStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("120")) // green
-
-	helpStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("244")).
-			Italic(true)
+			Foreground(lipgloss.Color("213")).
+			Align(lipgloss.Center)
 )
-
-var spinnerFrames = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
-
-type tickMsg struct{}
 
 type generatedMsg struct {
 	err error
 }
 
-func tickCmd() tea.Cmd {
-	return tea.Tick(120*time.Millisecond, func(time.Time) tea.Msg {
-		return tickMsg{}
-	})
+// getOrPlaceholder returns the value if not empty, otherwise returns placeholder text
+func getOrPlaceholder(value string) string {
+	if value == "" {
+		return "..."
+	}
+	return value
 }
 
 func generateCmd(lang, fw, arch, project string) tea.Cmd {
@@ -72,50 +77,30 @@ func generateCmd(lang, fw, arch, project string) tea.Cmd {
 	}
 }
 
-func (m model) inputStyle() lipgloss.Style {
-	// Slightly change accent color depending on the current step.
-	var bg lipgloss.Color
-	switch m.step {
-	case 0:
-		bg = lipgloss.Color("57") // purple
-	case 1:
-		bg = lipgloss.Color("24") // blue
-	case 2:
-		bg = lipgloss.Color("22") // green
-	default:
-		bg = lipgloss.Color("238") // gray
-	}
-
-	return lipgloss.NewStyle().
-		Foreground(lipgloss.Color("230")). // near white
-		Background(bg).
-		Padding(0, 1).
-		Width(40)
-}
-
 func initialModel() model {
 	return model{
-		step:  0,
-		input: "",
+		step:    0,
+		input:   input.New("", 50),
+		spinner: spinner.New("Generating your project..."),
 	}
 }
 
 func (m model) Init() tea.Cmd {
-	// No initial command needed.
 	return nil
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmds []tea.Cmd
+
 	switch msg := msg.(type) {
-	case tickMsg:
-		if m.generating {
-			m.spinFrame = (m.spinFrame + 1) % len(spinnerFrames)
-			return m, tickCmd()
-		}
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
 		return m, nil
 
 	case generatedMsg:
 		m.generating = false
+		m.spinner.SetRunning(false)
 		if msg.err != nil {
 			m.errMsg = msg.err.Error()
 		} else {
@@ -131,12 +116,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 
 		case tea.KeyEnter:
-			// Ignore input while generating.
 			if m.generating {
 				return m, nil
 			}
 
-			trimmed := strings.TrimSpace(strings.ToLower(m.input))
+			trimmed := strings.TrimSpace(strings.ToLower(m.input.GetValue()))
 			if trimmed == "" {
 				return m, nil
 			}
@@ -152,88 +136,108 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.project = trimmed
 			}
 
-			m.input = ""
+			m.input.SetValue("")
 			m.step++
 
 			if m.step >= 4 {
-				// Start loading state and trigger async generation.
 				m.generating = true
+				m.spinner.SetRunning(true)
 				return m, tea.Batch(
 					generateCmd(m.lang, m.fw, m.arch, m.project),
-					tickCmd(),
+					spinner.Tick(),
 				)
 			}
 
 			return m, nil
 
-		case tea.KeyBackspace, tea.KeyDelete:
-			if len(m.input) > 0 {
-				m.input = m.input[:len(m.input)-1]
-			}
-
 		default:
-			// Append regular characters to the input buffer.
-			m.input += msg.String()
+			if !m.generating {
+				var cmd tea.Cmd
+				m.input, cmd = m.input.Update(msg)
+				if cmd != nil {
+					cmds = append(cmds, cmd)
+				}
+			}
 		}
 	}
 
-	return m, nil
+	// Update spinner if generating
+	if m.generating {
+		var cmd tea.Cmd
+		m.spinner, cmd = m.spinner.Update(msg)
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
+	}
+
+	return m, tea.Batch(cmds...)
 }
 
 func (m model) View() string {
+	renderScreen := func(content string) string {
+		if m.width > 0 && m.height > 0 {
+			return lipgloss.Place(
+				m.width,
+				m.height,
+				lipgloss.Center,
+				lipgloss.Center,
+				content,
+			)
+		}
+		return screenStyle.Render(content)
+	}
+
 	if m.quitting {
 		if m.generating {
-			// Shouldn't normally happen, but guard just in case.
-			return headerStyle.Render("Exiting Archy...") + "\n"
+			return renderScreen(headerStyle.Render("Exiting Archy..."))
 		}
 
 		if m.errMsg != "" {
-			return headerStyle.Render("Archy · Project Generator") + "\n\n" +
-				lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Bold(true).
-					Render("Error: "+m.errMsg) + "\n"
+			banner := brand.Banner()
+			content := bannerStyle.Render(banner) + "\n\n" +
+				textStyle.Render("Error: "+m.errMsg)
+			return renderScreen(content)
 		}
 
 		if m.done {
-			return headerStyle.Render("Archy · Project Generator") + "\n\n" +
-				valueStyle.Render("Project generation finished!") + "\n"
+			banner := brand.Banner()
+			content := bannerStyle.Render(banner) + "\n\n" +
+				textStyle.Render(fmt.Sprintf("Project generation finished!\n\nYour project '%s' has been created successfully.", m.project))
+			return renderScreen(content)
 		}
 
-		return headerStyle.Render("Exiting Archy...") + "\n"
+		return renderScreen(headerStyle.Render("Exiting Archy..."))
 	}
 
 	var b strings.Builder
 
-	title := headerStyle.Render("Archy · Project Generator")
-	sub := subHeaderStyle.Render("Create a project in a few keystrokes")
-	b.WriteString(title + "\n" + sub + "\n\n")
+	// Banner with colorful text
+	banner := brand.Banner()
+	b.WriteString(bannerStyle.Render(banner) + "\n\n")
 
-	// Previously entered values
-	if m.lang != "" {
-		b.WriteString(labelStyle.Render("Language: ") + valueStyle.Render(m.lang) + "\n")
-	}
-	if m.fw != "" {
-		b.WriteString(labelStyle.Render("Framework: ") + valueStyle.Render(m.fw) + "\n")
-	}
-	if m.arch != "" {
-		b.WriteString(labelStyle.Render("Architecture: ") + valueStyle.Render(m.arch) + "\n")
-	}
-	if m.project != "" {
-		b.WriteString(labelStyle.Render("Project: ") + valueStyle.Render(m.project) + "\n")
-	}
-	if m.lang != "" || m.fw != "" || m.arch != "" || m.project != "" {
-		b.WriteString("\n")
-	}
+	// Always show all 4 lines to prevent shifting - reserve space for all inputs
+	// Show selected values with consistent text color
+	b.WriteString(textStyle.Render("Language: " + getOrPlaceholder(m.lang)) + "\n")
+	b.WriteString(textStyle.Render("Framework: " + getOrPlaceholder(m.fw)) + "\n")
+	b.WriteString(textStyle.Render("Architecture: " + getOrPlaceholder(m.arch)) + "\n")
+	b.WriteString(textStyle.Render("Project: " + getOrPlaceholder(m.project)) + "\n")
+	b.WriteString("\n")
 
 	// Current prompt
-	var prompt string
-
 	if m.generating {
-		frame := spinnerFrames[m.spinFrame%len(spinnerFrames)]
-		b.WriteString(valueStyle.Render(fmt.Sprintf("%s Generating your project...", frame)) + "\n")
-		b.WriteString("\n" + helpStyle.Render("Sit tight, Archy is working...") + "\n")
-		return b.String()
+		// Show loading screen with banner
+		var loadingContent strings.Builder
+		loadingContent.WriteString(bannerStyle.Render(banner) + "\n\n")
+		loadingContent.WriteString(textStyle.Render("Language: " + m.lang) + "\n")
+		loadingContent.WriteString(textStyle.Render("Framework: " + m.fw) + "\n")
+		loadingContent.WriteString(textStyle.Render("Architecture: " + m.arch) + "\n")
+		loadingContent.WriteString(textStyle.Render("Project: " + m.project) + "\n\n")
+		loadingContent.WriteString(m.spinner.View() + "\n")
+		loadingContent.WriteString(textStyle.Render("Creating your project structure...") + "\n")
+		return renderScreen(loadingContent.String())
 	}
 
+	var prompt string
 	switch m.step {
 	case 0:
 		prompt = "Language (go / js / python)"
@@ -244,25 +248,21 @@ func (m model) View() string {
 	case 3:
 		prompt = "Project name (folder to create)"
 	default:
-		b.WriteString(valueStyle.Render("Generating your project...") + "\n")
+		b.WriteString(textStyle.Render("Generating your project...") + "\n")
+		return renderScreen(b.String())
 	}
 
-	if m.step < 4 {
-		b.WriteString(labelStyle.Render(prompt) + "\n\n")
-		// Styled input line
-		inputLine := m.inputStyle().Render("> " + m.input)
-		b.WriteString(inputLine + "\n")
-	}
+	// Input section
+	b.WriteString(textStyle.Render(prompt) + "\n\n")
+	b.WriteString(m.input.View() + "\n\n")
+	b.WriteString(textStyle.Render("Enter to confirm · Ctrl+C / Esc to quit") + "\n")
 
-	b.WriteString("\n" + helpStyle.Render("Enter to confirm · Ctrl+C / Esc to quit") + "\n")
-
-	return b.String()
+	return renderScreen(b.String())
 }
 
 // Run starts the Archy TUI.
 func Run() error {
-	p := tea.NewProgram(initialModel())
+	p := tea.NewProgram(initialModel(), tea.WithAltScreen())
 	_, err := p.Run()
 	return err
 }
-

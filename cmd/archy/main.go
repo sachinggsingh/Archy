@@ -1,27 +1,26 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
+	"github.com/mattn/go-isatty"
+	"github.com/sachinggsingh/archy/internal/brand"
 	"github.com/sachinggsingh/archy/internal/tui"
 )
 
-// simple ANSI sequences to tint the terminal while Archy is running
-const (
-	archBgColor   = "\x1b[48;5;236m" // dark background
-	archFgColor   = "\x1b[38;5;252m" // light foreground
-	archColorOn   = archBgColor + archFgColor
-	archColorReset = "\x1b[0m"
-)
-
 func main() {
-	// Tint the terminal while the CLI is active.
-	fmt.Print(archColorOn)
-	defer fmt.Print(archColorReset)
+	// Bubble Tea needs a real interactive terminal. If Archy is run in a non-TTY
+	// context (pipes/redirects/CI), fail gracefully with a helpful message.
+	if !isatty.IsTerminal(os.Stdin.Fd()) || !isatty.IsTerminal(os.Stdout.Fd()) {
+		_, _ = os.Stdout.WriteString(brand.Banner() + "\n\n")
+		_, _ = os.Stderr.WriteString("Archy needs an interactive TTY to run the UI.\n")
+		_, _ = os.Stderr.WriteString("Run it directly in a terminal (don’t pipe/redirect stdin/stdout).\n")
+		os.Exit(1)
+	}
 
 	if err := tui.Run(); err != nil {
-		fmt.Println("error running TUI:", err)
+		// Keep stderr clean: Bubble Tea manages screen state.
+		_, _ = os.Stderr.WriteString("error running TUI: " + err.Error() + "\n")
 		os.Exit(1)
 	}
 }
