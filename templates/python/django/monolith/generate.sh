@@ -2,7 +2,7 @@
 
 PROJECT_NAME="{{.Project}}"
 
-echo "🚀 Creating Django monolith: $PROJECT_NAME"
+echo "Creating Django monolith: $PROJECT_NAME"
 
 # create project
 django-admin startproject config "$PROJECT_NAME" || exit 1

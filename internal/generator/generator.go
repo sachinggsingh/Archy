@@ -15,7 +15,7 @@ func GenerateProject(lang, frameWork, arch, project string) error {
 	normalized := strings.ToLower(strings.TrimSpace(lang))
 
 	switch normalized {
-	case "go":
+	case "go", "golang":
 		return GenerateTheGoProject(frameWork, arch, project)
 	case "js", "javascript", "node", "nodejs":
 		return GenerateTheNodeProject(frameWork, arch, project)
@@ -32,6 +32,14 @@ func GenerateTheNodeProject(frameWork, arch, project string) error {
 	ar := strings.ToLower(strings.TrimSpace(arch))
 	proj := strings.TrimSpace(project)
 
+	// Normalize architecture names
+	switch ar {
+	case "micro":
+		ar = "microservice"
+	case "mono":
+		ar = "monolith"
+	}
+
 	if proj == "" {
 		return fmt.Errorf("project name cannot be empty")
 	}
@@ -40,12 +48,15 @@ func GenerateTheNodeProject(frameWork, arch, project string) error {
 		return fmt.Errorf("node framework %q not supported yet (only express is implemented)", frameWork)
 	}
 
-	if ar != "microservice" && ar != "monolith" {
+	if ar != "micro" && ar != "mono" && ar != "microservice" && ar != "monolith" {
 		return fmt.Errorf("architecture %q not supported (use microservice or monolith)", arch)
 	}
 
 	// Find base directory that contains the templates.
-	exePath, _ := os.Executable()
+	exePath, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("Not able to find the exePath: %w", err)
+	}
 	var candidates []string
 	if exePath != "" {
 		candidates = append(candidates, filepath.Dir(exePath))
@@ -93,22 +104,22 @@ func GenerateTheNodeProject(frameWork, arch, project string) error {
 
 	cmd := exec.Command("bash", tmpPath)
 	cmd.Dir = baseDir
-	
+
 	// Suppress all output - we'll show a nice loading screen instead
 	cmd.Stdout = nil // Suppress stdout
 	cmd.Stderr = nil // Suppress stderr (including git hints and npm messages)
 	cmd.Stdin = nil  // No interactive input needed
-	
+
 	// Set environment to suppress git hints and npm funding messages
 	env := os.Environ()
 	env = append(env,
 		"GIT_CONFIG_GLOBAL=/dev/null",
 		"GIT_CONFIG_SYSTEM=/dev/null",
 		"GIT_TERMINAL_PROMPT=0",
-		"npm_config_fund=false",        // Disable funding messages
-		"npm_config_audit=false",       // Disable audit messages
-		"npm_config_progress=false",   // Disable progress bars
-		"CI=true",                      // Some tools are quieter in CI mode
+		"npm_config_fund=false",     // Disable funding messages
+		"npm_config_audit=false",    // Disable audit messages
+		"npm_config_progress=false", // Disable progress bars
+		"CI=true",                   // Some tools are quieter in CI mode
 	)
 	cmd.Env = env
 
@@ -129,6 +140,13 @@ func GenerateThePythonProject(frameWork, arch, project string) error {
 	fw := strings.ToLower(strings.TrimSpace(frameWork))
 	ar := strings.ToLower(strings.TrimSpace(arch))
 	proj := strings.TrimSpace(project)
+
+	// Normalize architecture names
+	if ar == "micro" {
+		ar = "microservice"
+	} else if ar == "mono" {
+		ar = "monolith"
+	}
 
 	if proj == "" {
 		return fmt.Errorf("project name cannot be empty")
@@ -201,9 +219,9 @@ func GenerateThePythonProject(frameWork, arch, project string) error {
 
 	// Capture stderr to see errors, but suppress stdout for cleaner output
 	var stderr bytes.Buffer
-	cmd.Stdout = nil // Suppress stdout
+	cmd.Stdout = nil     // Suppress stdout
 	cmd.Stderr = &stderr // Capture stderr to see errors
-	cmd.Stdin = nil  // No interactive input needed
+	cmd.Stdin = nil      // No interactive input needed
 
 	// Set environment to suppress git hints and pip messages
 	env := os.Environ()
@@ -211,9 +229,9 @@ func GenerateThePythonProject(frameWork, arch, project string) error {
 		"GIT_CONFIG_GLOBAL=/dev/null",
 		"GIT_CONFIG_SYSTEM=/dev/null",
 		"GIT_TERMINAL_PROMPT=0",
-		"PIP_NO_COLOR=1",        // Disable pip colors
-		"PIP_QUIET=1",           // Quiet pip output
-		"CI=true",               // Some tools are quieter in CI mode
+		"PIP_NO_COLOR=1", // Disable pip colors
+		"PIP_QUIET=1",    // Quiet pip output
+		"CI=true",        // Some tools are quieter in CI mode
 	)
 	cmd.Env = env
 

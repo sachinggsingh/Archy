@@ -5,7 +5,7 @@ PROJECT_NAME="{{.Project}}"
 mkdir -p "$PROJECT_NAME"
 cd "$PROJECT_NAME" || exit 1
 
-echo "🚀 Creating $PROJECT_NAME microservice..."
+echo "Creating $PROJECT_NAME microservice..."
 
 # 1. Initialize & install deps
 npm init -y
@@ -26,7 +26,7 @@ pkg.scripts = {
   'test': 'node --experimental-vm-modules node_modules/.bin/jest'
 };
 fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-console.log('✅ ES modules enabled');
+console.log('ES modules enabled');
 "
 
 # 4. Main server - FIXED
@@ -68,8 +68,8 @@ app.use('*', (req, res) => {
 
 const port = process.env.PORT || 8080;
 app.listen(port, () => {
-  console.log(`🚀 Server running on http://localhost:${port}`);
-  console.log(`📊 Health: http://localhost:${port}/health`);
+  console.log(`Server running on http://localhost:${port}`);
+  console.log(`Health: http://localhost:${port}/health`);
 });
 EOF
 
@@ -138,11 +138,11 @@ cat > db.js << 'EOF'
 // TODO: MongoDB, PostgreSQL, MySQL, etc.
 
 export const connectDB = async () => {
-  console.log('🔗 DB connected');
+  console.log(' DB connected');
 };
 
 export default connectDB;
-EOF
+EOF₹
 
 # 9. Utils - FIXED
 cd ../utils
@@ -214,11 +214,11 @@ dist/
 EOF
 
 cat > README.md << 'EOF'
-# {{.Project}} ✨
+# {{.Project}} 
 
 Node.js + Express + ES Modules Microservice
 
-## 🚀 Quick Start
+## Quick Start
 ```bash
 npm run dev
 # or

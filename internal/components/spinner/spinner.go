@@ -2,74 +2,81 @@ package spinner
 
 import (
 	"fmt"
-	"time"
 
+	bubblespinner "github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
-// Model represents a spinner component.
 type Model struct {
-	Frame      int
-	Running    bool
-	Message    string
-	Frames     []string
-	style      lipgloss.Style
-	messageStyle lipgloss.Style
+	Spinner bubblespinner.Model
+	Message string
+	Running bool
+
+	spinnerStyle lipgloss.Style
+	textStyle    lipgloss.Style
 }
 
-// TickMsg is sent to update the spinner animation.
-type TickMsg struct{}
+func New(message string, s bubblespinner.Spinner) Model {
 
-// New creates a new spinner model.
-func New(message string) Model {
+	sp := bubblespinner.New()
+	sp.Spinner = s
+
 	return Model{
+		Spinner: sp,
 		Message: message,
 		Running: true,
-		Frames: []string{
-			"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏",
-		},
-		style: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("252")), // Consistent color
-		messageStyle: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("252")), // Consistent color
+
+		spinnerStyle: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("69")),
+
+		textStyle: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("252")),
 	}
 }
 
-// Tick returns a command that sends a tick message.
-func Tick() tea.Cmd {
-	return tea.Tick(120*time.Millisecond, func(time.Time) tea.Msg {
-		return TickMsg{}
-	})
+func (m Model) Init() tea.Cmd {
+	if m.Running {
+		return m.Spinner.Tick
+	}
+	return nil
 }
 
-// Update handles messages for the spinner component.
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
-	switch msg.(type) {
-	case TickMsg:
-		if m.Running {
-			m.Frame = (m.Frame + 1) % len(m.Frames)
-			return m, Tick()
-		}
+
+	if !m.Running {
+		return m, nil
 	}
-	return m, nil
+
+	var cmd tea.Cmd
+	m.Spinner, cmd = m.Spinner.Update(msg)
+
+	return m, cmd
 }
 
-// View renders the spinner component.
 func (m Model) View() string {
+
 	if !m.Running {
 		return ""
 	}
-	frame := m.Frames[m.Frame%len(m.Frames)]
-	return fmt.Sprintf("%s %s", m.style.Render(frame), m.messageStyle.Render(m.Message))
+
+	m.Spinner.Style = m.spinnerStyle
+
+	return fmt.Sprintf(
+		"%s %s",
+		m.Spinner.View(),
+		m.textStyle.Render(m.Message),
+	)
 }
 
-// SetRunning sets whether the spinner is running.
-func (m *Model) SetRunning(running bool) {
-	m.Running = running
+func (m *Model) Stop() {
+	m.Running = false
 }
 
-// SetMessage updates the spinner message.
-func (m *Model) SetMessage(message string) {
-	m.Message = message
+func (m *Model) Start() {
+	m.Running = true
+}
+
+func (m *Model) SetMessage(msg string) {
+	m.Message = msg
 }

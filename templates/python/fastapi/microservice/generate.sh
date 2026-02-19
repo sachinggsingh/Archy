@@ -5,7 +5,7 @@ PROJECT_NAME="{{.Project}}"
 mkdir -p "$PROJECT_NAME"
 cd "$PROJECT_NAME" || exit 1
 
-echo "🚀 Creating FastAPI microservice..."
+echo "Creating FastAPI microservice..."
 
 pip install fastapi uvicorn python-dotenv || echo "Warning: pip install failed, continuing anyway..."
 

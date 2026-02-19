@@ -20,18 +20,16 @@ func New(placeholder string, width int) Model {
 	return Model{
 		Placeholder: placeholder,
 		Width:       width,
-		Focused:    true,
+		Focused:     true,
 		style: lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(lipgloss.Color("240")).
 			Foreground(lipgloss.Color("252")).
-			Padding(0, 1).
 			Width(width),
 		focusStyle: lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(lipgloss.Color("240")). // Same gray border, not magenta
-			Foreground(lipgloss.Color("252")).      // Consistent text color
-			Padding(0, 1).
+			Foreground(lipgloss.Color("252")).       // Consistent text color
 			Width(width),
 	}
 }

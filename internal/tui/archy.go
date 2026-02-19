@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	bubblespinner "github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/sachinggsingh/archy/internal/brand"
@@ -37,14 +38,14 @@ type model struct {
 // base styles
 var (
 	// Consistent text color for everything
-	textColor = lipgloss.Color("252") // Light gray/white
-	
+	textColor = lipgloss.Color("251") // Light gray/white
+
 	// Text style used throughout
 	textStyle = lipgloss.NewStyle().Foreground(textColor)
-	
+
 	// Screen style for fallback rendering
 	screenStyle = lipgloss.NewStyle().Foreground(textColor)
-	
+
 	// Banner style - colorful pink/magenta
 	bannerStyle = lipgloss.NewStyle().
 			Bold(true).
@@ -80,8 +81,8 @@ func generateCmd(lang, fw, arch, project string) tea.Cmd {
 func initialModel() model {
 	return model{
 		step:    0,
-		input:   input.New("", 50),
-		spinner: spinner.New("Generating your project..."),
+		input:   input.New("", 20),
+		spinner: spinner.New("Generating project", bubblespinner.Line),
 	}
 }
 
@@ -100,7 +101,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case generatedMsg:
 		m.generating = false
-		m.spinner.SetRunning(false)
+		m.spinner.Stop()
 		if msg.err != nil {
 			m.errMsg = msg.err.Error()
 		} else {
@@ -141,10 +142,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			if m.step >= 4 {
 				m.generating = true
-				m.spinner.SetRunning(true)
+				m.spinner.Start()
 				return m, tea.Batch(
 					generateCmd(m.lang, m.fw, m.arch, m.project),
-					spinner.Tick(),
+					m.spinner.Init(),
 				)
 			}
 
@@ -217,10 +218,10 @@ func (m model) View() string {
 
 	// Always show all 4 lines to prevent shifting - reserve space for all inputs
 	// Show selected values with consistent text color
-	b.WriteString(textStyle.Render("Language: " + getOrPlaceholder(m.lang)) + "\n")
-	b.WriteString(textStyle.Render("Framework: " + getOrPlaceholder(m.fw)) + "\n")
-	b.WriteString(textStyle.Render("Architecture: " + getOrPlaceholder(m.arch)) + "\n")
-	b.WriteString(textStyle.Render("Project: " + getOrPlaceholder(m.project)) + "\n")
+	b.WriteString(textStyle.Render("Language: "+getOrPlaceholder(m.lang)) + "\n")
+	b.WriteString(textStyle.Render("Framework: "+getOrPlaceholder(m.fw)) + "\n")
+	b.WriteString(textStyle.Render("Architecture: "+getOrPlaceholder(m.arch)) + "\n")
+	b.WriteString(textStyle.Render("Project: "+getOrPlaceholder(m.project)) + "\n")
 	b.WriteString("\n")
 
 	// Current prompt
@@ -228,10 +229,10 @@ func (m model) View() string {
 		// Show loading screen with banner
 		var loadingContent strings.Builder
 		loadingContent.WriteString(bannerStyle.Render(banner) + "\n\n")
-		loadingContent.WriteString(textStyle.Render("Language: " + m.lang) + "\n")
-		loadingContent.WriteString(textStyle.Render("Framework: " + m.fw) + "\n")
-		loadingContent.WriteString(textStyle.Render("Architecture: " + m.arch) + "\n")
-		loadingContent.WriteString(textStyle.Render("Project: " + m.project) + "\n\n")
+		loadingContent.WriteString(textStyle.Render("Language: "+m.lang) + "\n")
+		loadingContent.WriteString(textStyle.Render("Framework: "+m.fw) + "\n")
+		loadingContent.WriteString(textStyle.Render("Architecture: "+m.arch) + "\n")
+		loadingContent.WriteString(textStyle.Render("Project: "+m.project) + "\n\n")
 		loadingContent.WriteString(m.spinner.View() + "\n")
 		loadingContent.WriteString(textStyle.Render("Creating your project structure...") + "\n")
 		return renderScreen(loadingContent.String())
@@ -244,7 +245,10 @@ func (m model) View() string {
 	case 1:
 		prompt = "Framework (e.g. gin, express, fastapi)"
 	case 2:
-		prompt = "Architecture (microservice / monolith)"
+		prompt = "Architecture (micro / mono)"
+		if m.arch == "micro" {
+			prompt += "service"
+		}
 	case 3:
 		prompt = "Project name (folder to create)"
 	default:
