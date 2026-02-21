@@ -4,13 +4,38 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/list"
 	bubblespinner "github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/sachinggsingh/archy/internal/brand"
 	"github.com/sachinggsingh/archy/internal/components/input"
+	listcomponent "github.com/sachinggsingh/archy/internal/components/list"
 	"github.com/sachinggsingh/archy/internal/components/spinner"
 	"github.com/sachinggsingh/archy/internal/generator"
+)
+
+var (
+	languageItems = []list.Item{
+		listcomponent.Item("JavaScript"),
+		listcomponent.Item("Python"),
+	}
+
+	frameworkItems = map[string][]list.Item{
+		"javascript": {
+			listcomponent.Item("Express"),
+		},
+		"python": {
+			listcomponent.Item("Django"),
+			listcomponent.Item("FastAPI"),
+			listcomponent.Item("Flask"),
+		},
+	}
+
+	architectureItems = []list.Item{
+		listcomponent.Item("Monolith"),
+		listcomponent.Item("Microservice"),
+	}
 )
 
 // model holds the state for the Bubble Tea TUI.
@@ -24,6 +49,7 @@ type model struct {
 	project string
 
 	input   input.Model
+	list    listcomponent.Model
 	spinner spinner.Model
 
 	width  int
@@ -41,7 +67,7 @@ var (
 	textColor = lipgloss.Color("251") // Light gray/white
 
 	// Text style used throughout
-	textStyle = lipgloss.NewStyle().Foreground(textColor)
+	textStyle = lipgloss.NewStyle().Foreground(textColor).Bold(true)
 
 	// Screen style for fallback rendering
 	screenStyle = lipgloss.NewStyle().Foreground(textColor)
@@ -63,14 +89,6 @@ type generatedMsg struct {
 	err error
 }
 
-// getOrPlaceholder returns the value if not empty, otherwise returns placeholder text
-func getOrPlaceholder(value string) string {
-	if value == "" {
-		return "..."
-	}
-	return value
-}
-
 func generateCmd(lang, fw, arch, project string) tea.Cmd {
 	return func() tea.Msg {
 		err := generator.GenerateProject(lang, fw, arch, project)
@@ -79,11 +97,14 @@ func generateCmd(lang, fw, arch, project string) tea.Cmd {
 }
 
 func initialModel() model {
-	return model{
+	m := model{
 		step:    0,
-		input:   input.New("", 20),
+		input:   input.New("my-awesome-project", 40),
+		list:    listcomponent.New(languageItems, "Select Language"),
 		spinner: spinner.New("Generating project", bubblespinner.Line),
 	}
+	m.input.SetFocus(true)
+	return m
 }
 
 func (m model) Init() tea.Cmd {
@@ -97,6 +118,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		m.list.SetWidth(msg.Width)
+		m.list.SetHeight(msg.Height - 18) // Account for banner (~12) + prompts + help
 		return m, nil
 
 	case generatedMsg:
@@ -121,26 +144,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 
-			trimmed := strings.TrimSpace(strings.ToLower(m.input.GetValue()))
-			if trimmed == "" {
-				return m, nil
-			}
-
-			switch m.step {
-			case 0:
-				m.lang = trimmed
-			case 1:
-				m.fw = trimmed
-			case 2:
-				m.arch = trimmed
-			case 3:
+			if m.step == 3 {
+				trimmed := strings.TrimSpace(m.input.GetValue())
+				if trimmed == "" {
+					return m, nil
+				}
 				m.project = trimmed
-			}
-
-			m.input.SetValue("")
-			m.step++
-
-			if m.step >= 4 {
 				m.generating = true
 				m.spinner.Start()
 				return m, tea.Batch(
@@ -148,24 +157,44 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.spinner.Init(),
 				)
 			}
-
-			return m, nil
-
-		default:
-			if !m.generating {
-				var cmd tea.Cmd
-				m.input, cmd = m.input.Update(msg)
-				if cmd != nil {
-					cmds = append(cmds, cmd)
-				}
-			}
 		}
 	}
 
-	// Update spinner if generating
 	if m.generating {
 		var cmd tea.Cmd
 		m.spinner, cmd = m.spinner.Update(msg)
+		return m, cmd
+	}
+
+	if m.step < 3 {
+		var cmd tea.Cmd
+		updatedList, cmd := m.list.Update(msg)
+		m.list = updatedList.(listcomponent.Model)
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
+
+		if m.list.HasChoice() {
+			choice := m.list.GetChoice()
+			m.list.ClearChoice()
+			switch m.step {
+			case 0:
+				m.lang = strings.ToLower(choice)
+				fwItems := frameworkItems[m.lang]
+				m.list = listcomponent.New(fwItems, "Select Framework")
+			case 1:
+				m.fw = strings.ToLower(choice)
+				m.list = listcomponent.New(architectureItems, "Select Architecture")
+			case 2:
+				m.arch = strings.ToLower(choice)
+			}
+			m.step++
+			m.list.SetWidth(m.width)
+			m.list.SetHeight(m.height - 18)
+		}
+	} else if m.step == 3 {
+		var cmd tea.Cmd
+		m.input, cmd = m.input.Update(msg)
 		if cmd != nil {
 			cmds = append(cmds, cmd)
 		}
@@ -177,11 +206,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) View() string {
 	renderScreen := func(content string) string {
 		if m.width > 0 && m.height > 0 {
+			// Calculate if content is taller than screen
+			contentLines := strings.Count(content, "\n") + 1
+			vert := lipgloss.Center
+			if contentLines >= m.height {
+				vert = lipgloss.Top
+			}
+
 			return lipgloss.Place(
 				m.width,
 				m.height,
 				lipgloss.Center,
-				lipgloss.Center,
+				vert,
 				content,
 			)
 		}
@@ -192,73 +228,55 @@ func (m model) View() string {
 		if m.generating {
 			return renderScreen(headerStyle.Render("Exiting Archy..."))
 		}
-
 		if m.errMsg != "" {
 			banner := brand.Banner()
 			content := bannerStyle.Render(banner) + "\n\n" +
 				textStyle.Render("Error: "+m.errMsg)
 			return renderScreen(content)
 		}
-
 		if m.done {
 			banner := brand.Banner()
 			content := bannerStyle.Render(banner) + "\n\n" +
 				textStyle.Render(fmt.Sprintf("Project generation finished!\n\nYour project '%s' has been created successfully.", m.project))
 			return renderScreen(content)
 		}
-
 		return renderScreen(headerStyle.Render("Exiting Archy..."))
 	}
 
 	var b strings.Builder
-
-	// Banner with colorful text
 	banner := brand.Banner()
 	b.WriteString(bannerStyle.Render(banner) + "\n\n")
 
-	// Always show all 4 lines to prevent shifting - reserve space for all inputs
-	// Show selected values with consistent text color
-	b.WriteString(textStyle.Render("Language: "+getOrPlaceholder(m.lang)) + "\n")
-	b.WriteString(textStyle.Render("Framework: "+getOrPlaceholder(m.fw)) + "\n")
-	b.WriteString(textStyle.Render("Architecture: "+getOrPlaceholder(m.arch)) + "\n")
-	b.WriteString(textStyle.Render("Project: "+getOrPlaceholder(m.project)) + "\n")
-	b.WriteString("\n")
-
-	// Current prompt
 	if m.generating {
-		// Show loading screen with banner
-		var loadingContent strings.Builder
-		loadingContent.WriteString(bannerStyle.Render(banner) + "\n\n")
-		loadingContent.WriteString(textStyle.Render("Language: "+m.lang) + "\n")
-		loadingContent.WriteString(textStyle.Render("Framework: "+m.fw) + "\n")
-		loadingContent.WriteString(textStyle.Render("Architecture: "+m.arch) + "\n")
-		loadingContent.WriteString(textStyle.Render("Project: "+m.project) + "\n\n")
-		loadingContent.WriteString(m.spinner.View() + "\n")
-		loadingContent.WriteString(textStyle.Render("Creating your project structure...") + "\n")
-		return renderScreen(loadingContent.String())
-	}
-
-	var prompt string
-	switch m.step {
-	case 0:
-		prompt = "Language (go / js / python)"
-	case 1:
-		prompt = "Framework (e.g. gin, express, fastapi)"
-	case 2:
-		prompt = "Architecture (micro / mono)"
-		if m.arch == "micro" {
-			prompt += "service"
-		}
-	case 3:
-		prompt = "Project name (folder to create)"
-	default:
-		b.WriteString(textStyle.Render("Generating your project...") + "\n")
+		b.WriteString(m.spinner.Spinner.View() + " " + textStyle.Render("Generating project") + "\n")
 		return renderScreen(b.String())
 	}
 
-	// Input section
+	var prompt string
+	var inputView string
+	switch m.step {
+	case 0:
+		prompt = "Select Language"
+		inputView = m.list.View()
+	case 1:
+		prompt = "Select Framework"
+		b.WriteString(textStyle.Render("Language: "+m.lang) + "\n\n")
+		inputView = m.list.View()
+	case 2:
+		prompt = "Select Architecture"
+		b.WriteString(textStyle.Render("Language:  "+m.lang) + "\n")
+		b.WriteString(textStyle.Render("Framework: "+m.fw) + "\n\n")
+		inputView = m.list.View()
+	case 3:
+		prompt = "Project name (folder to create)"
+		b.WriteString(textStyle.Render("Language:     "+m.lang) + "\n")
+		b.WriteString(textStyle.Render("Framework:    "+m.fw) + "\n")
+		b.WriteString(textStyle.Render("Architecture: "+m.arch) + "\n\n")
+		inputView = m.input.View()
+	}
+
 	b.WriteString(textStyle.Render(prompt) + "\n\n")
-	b.WriteString(m.input.View() + "\n\n")
+	b.WriteString(inputView + "\n\n")
 	b.WriteString(textStyle.Render("Enter to confirm · Ctrl+C / Esc to quit") + "\n")
 
 	return renderScreen(b.String())

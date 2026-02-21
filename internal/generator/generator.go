@@ -15,12 +15,12 @@ func GenerateProject(lang, frameWork, arch, project string) error {
 	normalized := strings.ToLower(strings.TrimSpace(lang))
 
 	switch normalized {
-	case "go", "golang":
-		return GenerateTheGoProject(frameWork, arch, project)
 	case "js", "javascript", "node", "nodejs":
 		return GenerateTheNodeProject(frameWork, arch, project)
 	case "python", "py":
 		return GenerateThePythonProject(frameWork, arch, project)
+	case "go", "golang":
+		return GenerateTheGoProject(frameWork, arch, project)
 	default:
 		return fmt.Errorf("language %q not supported", lang)
 	}
@@ -130,7 +130,7 @@ func GenerateTheNodeProject(frameWork, arch, project string) error {
 	return nil
 }
 
-// TODO: Implement Go/Python templates when available.
+// TODO: Implement Go templates when available.
 func GenerateTheGoProject(frameWork, arch, project string) error {
 	fmt.Println("Go project generation is not implemented yet.")
 	return nil
