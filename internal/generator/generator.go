@@ -156,6 +156,7 @@ func GenerateThePythonProject(frameWork, arch, project string) error {
 		"flask":   true,
 		"fastapi": true,
 		"django":  true,
+		"http":    true,
 	}
 	if !supportedFrameworks[fw] {
 		return fmt.Errorf("python framework %q not supported (use flask, fastapi, or django)", frameWork)
