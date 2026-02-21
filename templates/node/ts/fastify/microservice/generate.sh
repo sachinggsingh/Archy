@@ -2,7 +2,7 @@
 
 PROJECT_NAME="{{.Project}}"
 
-echo "Creating Express microservice - TypeScript: $PROJECT_NAME"
+echo "Creating Fastify microservice - TypeScript: $PROJECT_NAME"
 
 # Create project directory
 mkdir -p "$PROJECT_NAME"
@@ -13,8 +13,8 @@ npm init -y
 npx tsc --init
 
 # Install dependencies
-npm install express dotenv
-npm install -D @types/express @types/node ts-node typescript
+npm install fastify dotenv
+npm install -D @types/node ts-node typescript
 
 # Create src directory
 mkdir -p src
@@ -28,23 +28,28 @@ mkdir -p src/utils
 
 # Create index.ts
 cat > src/index.ts << 'EOF'
-import express from 'express';
+import Fastify from 'fastify';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const app = express();
-const port = process.env.PORT || 8080;
-
-app.use(express.json());
-
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+const fastify = Fastify({
+  logger: true
 });
 
-app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
+const port = process.env.PORT || 8080;
+
+// Health check
+fastify.get('/health', async (request, reply) => {
+  return { status: 'ok', timestamp: new Date().toISOString() };
+});
+
+fastify.listen({ port }, (err, address) => {
+  if (err) {
+    console.error(err);
+    process.exit(1);
+  }
+  console.log(`Server running on ${address}`);
 });
 EOF
 
@@ -91,10 +96,9 @@ cat > package.json << 'EOF'
   "license": "ISC",
   "dependencies": {
     "dotenv": "^16.0.0",
-    "express": "^4.17.1"
+    "fastify": "^4.0.0"
   },
   "devDependencies": {
-    "@types/express": "^4.17.13",
     "@types/node": "^16.0.0",
     "ts-node": "^10.0.0",
     "typescript": "^4.0.0"
@@ -109,7 +113,7 @@ dist
 .env
 EOF
 
-echo "Express microservice created successfully!"
+echo "Fastify microservice created successfully!"
 
 # Run build
 npm run build

@@ -1,8 +1,8 @@
 #!/bin/bash
 
-PROJECT_NAME="{{.Project}}"
+$PROJECT_NAME = "{{.Project}}"
 
-echo "Creating Express microservice - TypeScript: $PROJECT_NAME"
+echo "Creating HTTP microservice - TypeScript: $PROJECT_NAME"
 
 # Create project directory
 mkdir -p "$PROJECT_NAME"
@@ -109,7 +109,7 @@ dist
 .env
 EOF
 
-echo "Express microservice created successfully!"
+echo "HTTP microservice created successfully!"
 
 # Run build
 npm run build

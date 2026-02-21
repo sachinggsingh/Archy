@@ -5,9 +5,7 @@ PROJECT_NAME="{{.Project}}"
 mkdir -p "$PROJECT_NAME"
 cd "$PROJECT_NAME" || exit 1
 
-echo "Creating FastAPI microservice..."
-
-pip install fastapi uvicorn python-dotenv || echo "Warning: pip install failed, continuing anyway..."
+# No installation per user request
 
 mkdir -p app/{api,core,models,schemas,services,db}
 
@@ -34,4 +32,4 @@ def create_user():
     return {"created":True}
 EOF
 
-echo "FastAPI microservice ready"
+# No final echo per user request

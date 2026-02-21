@@ -1,7 +1,6 @@
 package generator
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -105,10 +104,10 @@ func GenerateTheNodeProject(frameWork, arch, project string) error {
 	cmd := exec.Command("bash", tmpPath)
 	cmd.Dir = baseDir
 
-	// Suppress all output - we'll show a nice loading screen instead
-	cmd.Stdout = nil // Suppress stdout
-	cmd.Stderr = nil // Suppress stderr (including git hints and npm messages)
-	cmd.Stdin = nil  // No interactive input needed
+	// Suppress all output for a clean TUI
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	cmd.Stdin = nil
 
 	// Set environment to suppress git hints and npm funding messages
 	env := os.Environ()
@@ -217,11 +216,10 @@ func GenerateThePythonProject(frameWork, arch, project string) error {
 	cmd := exec.Command("bash", tmpPath)
 	cmd.Dir = baseDir
 
-	// Capture stderr to see errors, but suppress stdout for cleaner output
-	var stderr bytes.Buffer
-	cmd.Stdout = nil     // Suppress stdout
-	cmd.Stderr = &stderr // Capture stderr to see errors
-	cmd.Stdin = nil      // No interactive input needed
+	// Suppress all output for a clean TUI
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	cmd.Stdin = nil
 
 	// Set environment to suppress git hints and pip messages
 	env := os.Environ()
@@ -236,10 +234,6 @@ func GenerateThePythonProject(frameWork, arch, project string) error {
 	cmd.Env = env
 
 	if err := cmd.Run(); err != nil {
-		errMsg := stderr.String()
-		if errMsg != "" {
-			return fmt.Errorf("failed to run python template script: %w\nstderr: %s", err, errMsg)
-		}
 		return fmt.Errorf("failed to run python template script: %w", err)
 	}
 

@@ -23,9 +23,22 @@ var (
 
 	frameworkItems = map[string][]list.Item{
 		"javascript": {
+			listcomponent.Item("Http"),
 			listcomponent.Item("Express"),
 		},
+		"typescript": {
+			listcomponent.Item("Http"),
+			listcomponent.Item("Express"),
+			listcomponent.Item("Fastify"),
+		},
+		"golang": {
+			listcomponent.Item("Http"),
+			listcomponent.Item("Gin"),
+			listcomponent.Item("Echo"),
+			listcomponent.Item("Fiber"),
+		},
 		"python": {
+			listcomponent.Item("Http"),
 			listcomponent.Item("Django"),
 			listcomponent.Item("FastAPI"),
 			listcomponent.Item("Flask"),
@@ -69,6 +82,15 @@ var (
 	// Text style used throughout
 	textStyle = lipgloss.NewStyle().Foreground(textColor).Bold(true)
 
+	// Label style for selection summaries
+	labelStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("205")) // Bright pink
+
+	// Value style for selection summaries
+	valueStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("81")). // Cyan
+			Italic(true)
+
 	// Screen style for fallback rendering
 	screenStyle = lipgloss.NewStyle().Foreground(textColor)
 
@@ -76,13 +98,13 @@ var (
 	bannerStyle = lipgloss.NewStyle().
 			Bold(true).
 			Foreground(lipgloss.Color("213")).
-			Align(lipgloss.Center)
+			MarginLeft(4)
 
 	// Header style for exit messages
 	headerStyle = lipgloss.NewStyle().
 			Bold(true).
 			Foreground(lipgloss.Color("213")).
-			Align(lipgloss.Center)
+			MarginLeft(4)
 )
 
 type generatedMsg struct {
@@ -99,9 +121,9 @@ func generateCmd(lang, fw, arch, project string) tea.Cmd {
 func initialModel() model {
 	m := model{
 		step:    0,
-		input:   input.New("my-awesome-project", 40),
+		input:   input.New("project-name", 40),
 		list:    listcomponent.New(languageItems, "Select Language"),
-		spinner: spinner.New("Generating project", bubblespinner.Line),
+		spinner: spinner.New("Generating project", bubblespinner.Points),
 	}
 	m.input.SetFocus(true)
 	return m
@@ -119,7 +141,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		m.list.SetWidth(msg.Width)
-		m.list.SetHeight(msg.Height - 18) // Account for banner (~12) + prompts + help
+		m.list.SetHeight(msg.Height - 22)
 		return m, nil
 
 	case generatedMsg:
@@ -151,10 +173,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				m.project = trimmed
 				m.generating = true
-				m.spinner.Start()
 				return m, tea.Batch(
 					generateCmd(m.lang, m.fw, m.arch, m.project),
-					m.spinner.Init(),
+					m.spinner.Spinner.Tick,
 				)
 			}
 		}
@@ -190,7 +211,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.step++
 			m.list.SetWidth(m.width)
-			m.list.SetHeight(m.height - 18)
+			m.list.SetHeight(m.height - 26)
 		}
 	} else if m.step == 3 {
 		var cmd tea.Cmd
@@ -206,18 +227,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) View() string {
 	renderScreen := func(content string) string {
 		if m.width > 0 && m.height > 0 {
-			// Calculate if content is taller than screen
-			contentLines := strings.Count(content, "\n") + 1
-			vert := lipgloss.Center
-			if contentLines >= m.height {
-				vert = lipgloss.Top
-			}
-
+			// Align content to the left as requested by the user.
+			// Fixed vertical position (Top) ensures the banner stays in place.
 			return lipgloss.Place(
 				m.width,
 				m.height,
-				lipgloss.Center,
-				vert,
+				lipgloss.Left,
+				lipgloss.Top,
 				content,
 			)
 		}
@@ -231,13 +247,13 @@ func (m model) View() string {
 		if m.errMsg != "" {
 			banner := brand.Banner()
 			content := bannerStyle.Render(banner) + "\n\n" +
-				textStyle.Render("Error: "+m.errMsg)
+				headerStyle.Render("Error: "+m.errMsg)
 			return renderScreen(content)
 		}
 		if m.done {
 			banner := brand.Banner()
 			content := bannerStyle.Render(banner) + "\n\n" +
-				textStyle.Render(fmt.Sprintf("Project generation finished!\n\nYour project '%s' has been created successfully.", m.project))
+				headerStyle.Render(fmt.Sprintf("Project generation finished!\n\nYour project '%s' has been created successfully.", m.project))
 			return renderScreen(content)
 		}
 		return renderScreen(headerStyle.Render("Exiting Archy..."))
@@ -248,36 +264,37 @@ func (m model) View() string {
 	b.WriteString(bannerStyle.Render(banner) + "\n\n")
 
 	if m.generating {
-		b.WriteString(m.spinner.Spinner.View() + " " + textStyle.Render("Generating project") + "\n")
+		b.WriteString(lipgloss.NewStyle().MarginLeft(4).Render(m.spinner.View()) + "\n")
 		return renderScreen(b.String())
 	}
 
-	var prompt string
 	var inputView string
+	mainStyle := lipgloss.NewStyle().MarginLeft(4)
+
 	switch m.step {
 	case 0:
-		prompt = "Select Language"
-		inputView = m.list.View()
+		inputView = mainStyle.Render(m.list.View())
 	case 1:
-		prompt = "Select Framework"
-		b.WriteString(textStyle.Render("Language: "+m.lang) + "\n\n")
-		inputView = m.list.View()
+		b.WriteString(mainStyle.Render(labelStyle.Bold(true).Render("Language:     ")+valueStyle.Render(m.lang)) + "\n\n")
+		inputView = mainStyle.Render(m.list.View())
 	case 2:
-		prompt = "Select Architecture"
-		b.WriteString(textStyle.Render("Language:  "+m.lang) + "\n")
-		b.WriteString(textStyle.Render("Framework: "+m.fw) + "\n\n")
-		inputView = m.list.View()
+		b.WriteString(mainStyle.Render(labelStyle.Bold(true).Render("Language:     ")+valueStyle.Render(m.lang)) + "\n")
+		b.WriteString(mainStyle.Render(labelStyle.Bold(true).Render("Framework:    ")+valueStyle.Render(m.fw)) + "\n\n")
+		inputView = mainStyle.Render(m.list.View())
 	case 3:
-		prompt = "Project name (folder to create)"
-		b.WriteString(textStyle.Render("Language:     "+m.lang) + "\n")
-		b.WriteString(textStyle.Render("Framework:    "+m.fw) + "\n")
-		b.WriteString(textStyle.Render("Architecture: "+m.arch) + "\n\n")
-		inputView = m.input.View()
+		b.WriteString(mainStyle.Render(labelStyle.Bold(true).Render("Language:     ")+valueStyle.Render(m.lang)) + "\n")
+		b.WriteString(mainStyle.Render(labelStyle.Bold(true).Render("Framework:    ")+valueStyle.Render(m.fw)) + "\n")
+		b.WriteString(mainStyle.Render(labelStyle.Bold(true).Render("Architecture: ")+valueStyle.Render(m.arch)) + "\n\n")
+		inputView = mainStyle.Render(m.input.View())
 	}
 
-	b.WriteString(textStyle.Render(prompt) + "\n\n")
 	b.WriteString(inputView + "\n\n")
-	b.WriteString(textStyle.Render("Enter to confirm · Ctrl+C / Esc to quit") + "\n")
+
+	helpText := "Enter to confirm · Ctrl+C / Esc to quit"
+	if m.step < 3 {
+		helpText = "↑/↓ move · Enter to confirm · Ctrl+C / Esc to quit"
+	}
+	b.WriteString(mainStyle.Render(textStyle.Faint(true).Render(helpText)) + "\n")
 
 	return renderScreen(b.String())
 }

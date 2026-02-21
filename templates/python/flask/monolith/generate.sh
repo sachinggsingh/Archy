@@ -5,9 +5,7 @@ PROJECT_NAME="{{.Project}}"
 mkdir -p "$PROJECT_NAME"
 cd "$PROJECT_NAME" || exit 1
 
-echo "Creating Flask monolith..."
-
-pip install flask python-dotenv || echo "Warning: pip install failed, continuing anyway..."
+# No installation per user request
 
 mkdir -p app/{routes,models,services,core}
 
@@ -46,4 +44,4 @@ def users():
     return {"users":[]}
 EOF
 
-echo "✅ Flask monolith ready"
+# No final echo per user request

@@ -1,8 +1,8 @@
 #!/bin/bash
 
-PROJECT_NAME="{{.Project}}"
+$PROJECT_NAME = "{{.Project}}"
 
-echo "Creating Express microservice - TypeScript: $PROJECT_NAME"
+echo "Creating HTTP microservice - JavaScript - HTTP-server: $PROJECT_NAME"
 
 # Create project directory
 mkdir -p "$PROJECT_NAME"
@@ -10,11 +10,9 @@ cd "$PROJECT_NAME"
 
 # Initialize TypeScript
 npm init -y
-npx tsc --init
 
 # Install dependencies
 npm install express dotenv
-npm install -D @types/express @types/node ts-node typescript
 
 # Create src directory
 mkdir -p src
@@ -82,7 +80,7 @@ cat > package.json << 'EOF'
   "main": "dist/index.js",
   "scripts": {
     "start": "node dist/index.js",
-    "dev": "ts-node src/index.ts",
+    "dev": "node src/index.js",
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -95,9 +93,7 @@ cat > package.json << 'EOF'
   },
   "devDependencies": {
     "@types/express": "^4.17.13",
-    "@types/node": "^16.0.0",
-    "ts-node": "^10.0.0",
-    "typescript": "^4.0.0"
+    "@types/node": "^16.0.0"
   }
 }
 EOF
@@ -109,7 +105,7 @@ dist
 .env
 EOF
 
-echo "Express microservice created successfully!"
+echo "HTTP microservice created successfully!"
 
 # Run build
 npm run build

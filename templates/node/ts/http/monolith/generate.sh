@@ -2,7 +2,7 @@
 
 PROJECT_NAME="{{.Project}}"
 
-echo "Creating Express microservice - TypeScript: $PROJECT_NAME"
+echo "Creating HTTP microservice - TypeScript: $PROJECT_NAME"
 
 # Create project directory
 mkdir -p "$PROJECT_NAME"
@@ -13,8 +13,8 @@ npm init -y
 npx tsc --init
 
 # Install dependencies
-npm install express dotenv
-npm install -D @types/express @types/node ts-node typescript
+npm install dotenv
+npm install -D @types/node ts-node typescript
 
 # Create src directory
 mkdir -p src
@@ -28,22 +28,24 @@ mkdir -p src/utils
 
 # Create index.ts
 cat > src/index.ts << 'EOF'
-import express from 'express';
+import http from 'http';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const app = express();
-const port = process.env.PORT || 8080;
-
-app.use(express.json());
-
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+const server = http.createServer((req, res) => {
+  if (req.url === '/health' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }));
+  } else {
+    res.writeHead(404);
+    res.end('Not Found');
+  }
 });
 
-app.listen(port, () => {
+const port = process.env.PORT || 8080;
+
+server.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });
 EOF
@@ -90,11 +92,9 @@ cat > package.json << 'EOF'
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "dotenv": "^16.0.0",
-    "express": "^4.17.1"
+    "dotenv": "^16.0.0"
   },
   "devDependencies": {
-    "@types/express": "^4.17.13",
     "@types/node": "^16.0.0",
     "ts-node": "^10.0.0",
     "typescript": "^4.0.0"
@@ -109,7 +109,7 @@ dist
 .env
 EOF
 
-echo "Express microservice created successfully!"
+echo "HTTP microservice created successfully!"
 
 # Run build
 npm run build

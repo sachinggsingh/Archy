@@ -1,16 +1,11 @@
-#!/bin/bash
-# Node + JS + Express + Monolith
+# No extra colors or output needed per user request
 PROJECT_NAME="{{.Project}}"
 
 mkdir -p "$PROJECT_NAME"
 cd "$PROJECT_NAME" || exit 1
 
-echo "🏗  Creating $PROJECT_NAME monolith..."
-
-# 1. Initialize & install deps
+# 1. Initialize
 npm init -y
-npm install express cors dotenv
-npm install --save-dev nodemon jest supertest
 
 # 2. Create folder structure (monolith-style, still modular)
 mkdir -p src/{middleware,routes,controllers,services,utils,test,config,db,models}
@@ -26,7 +21,6 @@ pkg.scripts = {
   'test': 'node --experimental-vm-modules node_modules/.bin/jest'
 };
 fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-console.log('✅ ES modules enabled');
 "
 
 # 4. Main server entry
