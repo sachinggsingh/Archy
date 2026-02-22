@@ -4,24 +4,23 @@ PROJECT_NAME="{{.Project}}"
 mkdir -p "$PROJECT_NAME"
 cd "$PROJECT_NAME" || exit 1
 
-# 1. Initialize
-npm init -y
+# 1. Create package.json
+cat > package.json << 'EOF'
+{
+  "name": "{{.Project}}",
+  "version": "1.0.0",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest"
+  }
+}
+EOF
 
-# 2. Create folder structure (monolith-style, still modular)
+# 2. Create folder structure
 mkdir -p src/{middleware,routes,controllers,services,utils,test,config,db,models}
-
-# 3. Update package.json for ES modules
-node -e "
-const fs = require('fs');
-const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-pkg.type = 'module';
-pkg.scripts = {
-  'start': 'node src/index.js',
-  'dev': 'nodemon src/index.js --experimental-specifier-resolution=node',
-  'test': 'node --experimental-vm-modules node_modules/.bin/jest'
-};
-fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-"
 
 # 4. Main server entry
 cd src && touch index.js
@@ -62,8 +61,8 @@ app.use('*', (req, res) => {
 
 const port = process.env.PORT || 8080;
 app.listen(port, () => {
-  console.log(`🚀 Monolith server running on http://localhost:${port}`);
-  console.log(`📊 Health: http://localhost:${port}/health`);
+  console.log(`Server running on http://localhost:${port}`);
+  console.log(`Health: http://localhost:${port}/health`);
 });
 
 export default app;
@@ -230,7 +229,6 @@ Node.js + Express Monolith (ES Modules)
 
 ## 🚀 Quick Start
 ```bash
-npm run dev
 ```
 EOF
 

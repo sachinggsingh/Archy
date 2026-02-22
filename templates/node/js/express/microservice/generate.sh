@@ -10,19 +10,6 @@ npm init -y
 # 2. Create folder structure
 mkdir -p src/{middleware,route,service,utils,test,config,db,models}
 
-# 3. Update package.json for ES modules
-node -e "
-const fs = require('fs');
-const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-pkg.type = 'module';
-pkg.scripts = {
-  'start': 'node src/index.js',
-  'dev': 'nodemon src/index.js --experimental-specifier-resolution=node',
-  'test': 'node --experimental-vm-modules node_modules/.bin/jest'
-};
-fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-"
-
 # 4. Main server - FIXED
 cd src && touch index.js
 cat > index.js << 'EOF'
@@ -214,6 +201,5 @@ Node.js + Express + ES Modules Microservice
 
 ## Quick Start
 ```bash
-npm run dev
 # or
 docker compose up

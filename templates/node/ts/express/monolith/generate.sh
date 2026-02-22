@@ -8,13 +8,7 @@ echo "Creating Express monolith - TypeScript: $PROJECT_NAME"
 mkdir -p "$PROJECT_NAME"
 cd "$PROJECT_NAME"
 
-# Initialize TypeScript
-npm init -y
-npx tsc --init
-
-# Install dependencies
-npm install express dotenv
-npm install -D @types/express @types/node ts-node typescript
+echo "Express monolith created successfully!"
 
 # Create src directory
 mkdir -p src
@@ -112,7 +106,5 @@ EOF
 echo "Express monolith created successfully!"
 
 # Run build
-npm run build
 
 # Run dev
-npm run dev

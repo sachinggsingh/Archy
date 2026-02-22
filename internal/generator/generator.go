@@ -14,8 +14,8 @@ func GenerateProject(lang, frameWork, arch, project string) error {
 	normalized := strings.ToLower(strings.TrimSpace(lang))
 
 	switch normalized {
-	case "js", "javascript", "node", "nodejs":
-		return GenerateTheNodeProject(frameWork, arch, project)
+	case "js", "javascript", "ts", "typescript", "node", "nodejs":
+		return GenerateTheNodeProject(lang, frameWork, arch, project)
 	case "python", "py":
 		return GenerateThePythonProject(frameWork, arch, project)
 	case "go", "golang":
@@ -25,13 +25,18 @@ func GenerateProject(lang, frameWork, arch, project string) error {
 	}
 }
 
-// GenerateTheNodeProject generates a Node.js project using the template scripts.
-func GenerateTheNodeProject(frameWork, arch, project string) error {
-	fw := strings.ToLower(strings.TrimSpace(frameWork))
-	ar := strings.ToLower(strings.TrimSpace(arch))
-	proj := strings.TrimSpace(project)
+// findTemplatePath looks for the template script in candidate directories.
+func findTemplatePath(lang, framework, arch string) (string, string, error) {
+	exePath, _ := os.Executable()
+	var candidates []string
+	if exePath != "" {
+		candidates = append(candidates, filepath.Dir(exePath))
+	}
+	if cwd, err := os.Getwd(); err == nil {
+		candidates = append(candidates, cwd)
+	}
 
-	// Normalize architecture names
+	ar := arch
 	switch ar {
 	case "micro":
 		ar = "microservice"
@@ -39,203 +44,102 @@ func GenerateTheNodeProject(frameWork, arch, project string) error {
 		ar = "monolith"
 	}
 
-	if proj == "" {
-		return fmt.Errorf("project name cannot be empty")
-	}
-
-	if fw != "express" {
-		return fmt.Errorf("node framework %q not supported yet (only express is implemented)", frameWork)
-	}
-
-	if ar != "micro" && ar != "mono" && ar != "microservice" && ar != "monolith" {
-		return fmt.Errorf("architecture %q not supported (use microservice or monolith)", arch)
-	}
-
-	// Find base directory that contains the templates.
-	exePath, err := os.Executable()
-	if err != nil {
-		return fmt.Errorf("Not able to find the exePath: %w", err)
-	}
-	var candidates []string
-	if exePath != "" {
-		candidates = append(candidates, filepath.Dir(exePath))
-	}
-	if cwd, err := os.Getwd(); err == nil {
-		if len(candidates) == 0 || candidates[0] != cwd {
-			candidates = append(candidates, cwd)
-		}
-	}
-
-	var (
-		baseDir    string
-		scriptPath string
-	)
-
+	// Try common locations
 	for _, base := range candidates {
-		p := filepath.Join(base, "templates", "node", "js", "express", ar, "generate.sh")
+		// Try exact lang/framework/arch path
+		p := filepath.Join(base, "templates", lang, framework, ar, "generate.sh")
 		if _, err := os.Stat(p); err == nil {
-			baseDir = base
-			scriptPath = p
-			break
+			return base, p, nil
+		}
+
+		// Try capitalized framework (for Go)
+		capitalizedFW := strings.Title(framework)
+		p = filepath.Join(base, "templates", lang, capitalizedFW, ar, "generate.sh")
+		if _, err := os.Stat(p); err == nil {
+			return base, p, nil
 		}
 	}
 
-	if scriptPath == "" {
-		return fmt.Errorf("template script not found for architecture %q", ar)
-	}
-
-	// Read script content and substitute project placeholder.
-	content, err := os.ReadFile(scriptPath)
-	if err != nil {
-		return fmt.Errorf("failed to read template script: %w", err)
-	}
-
-	scriptWithProject := strings.ReplaceAll(string(content), "{{.Project}}", proj)
-
-	// Write a temporary script next to the original so relative paths still work.
-	tmpName := fmt.Sprintf("generate-%d.sh", time.Now().UnixNano())
-	tmpPath := filepath.Join(baseDir, tmpName)
-
-	if err := os.WriteFile(tmpPath, []byte(scriptWithProject), 0o755); err != nil {
-		return fmt.Errorf("failed to write temp script: %w", err)
-	}
-	defer os.Remove(tmpPath) // best-effort cleanup
-
-	cmd := exec.Command("bash", tmpPath)
-	cmd.Dir = baseDir
-
-	// Suppress all output for a clean TUI
-	cmd.Stdout = nil
-	cmd.Stderr = nil
-	cmd.Stdin = nil
-
-	// Set environment to suppress git hints and npm funding messages
-	env := os.Environ()
-	env = append(env,
-		"GIT_CONFIG_GLOBAL=/dev/null",
-		"GIT_CONFIG_SYSTEM=/dev/null",
-		"GIT_TERMINAL_PROMPT=0",
-		"npm_config_fund=false",     // Disable funding messages
-		"npm_config_audit=false",    // Disable audit messages
-		"npm_config_progress=false", // Disable progress bars
-		"CI=true",                   // Some tools are quieter in CI mode
-	)
-	cmd.Env = env
-
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to run node template script: %w", err)
-	}
-
-	return nil
+	return "", "", fmt.Errorf("template script not found for %s/%s/%s", lang, framework, ar)
 }
 
-// TODO: Implement Go templates when available.
+// GenerateTheNodeProject generates a Node.js project.
+func GenerateTheNodeProject(language, frameWork, arch, project string) error {
+	lang := "js"
+	if strings.Contains(strings.ToLower(language), "typescript") || strings.ToLower(language) == "ts" {
+		lang = "ts"
+	}
+
+	baseDir, scriptPath, err := findTemplatePath(filepath.Join("node", lang), frameWork, arch)
+	if err != nil {
+		return err
+	}
+
+	return runTemplateScript(baseDir, scriptPath, project, "npm")
+}
+
+// GenerateTheGoProject generates a Go project.
 func GenerateTheGoProject(frameWork, arch, project string) error {
-	fmt.Println("Go project generation is not implemented yet.")
-	return nil
+	baseDir, scriptPath, err := findTemplatePath("golang", frameWork, arch)
+	if err != nil {
+		return err
+	}
+
+	return runTemplateScript(baseDir, scriptPath, project, "go")
 }
 
 func GenerateThePythonProject(frameWork, arch, project string) error {
-	fw := strings.ToLower(strings.TrimSpace(frameWork))
-	ar := strings.ToLower(strings.TrimSpace(arch))
-	proj := strings.TrimSpace(project)
-
-	// Normalize architecture names
-	if ar == "micro" {
-		ar = "microservice"
-	} else if ar == "mono" {
-		ar = "monolith"
+	baseDir, scriptPath, err := findTemplatePath("python", frameWork, arch)
+	if err != nil {
+		return err
 	}
 
-	if proj == "" {
-		return fmt.Errorf("project name cannot be empty")
-	}
+	return runTemplateScript(baseDir, scriptPath, project, "python")
+}
 
-	// Supported Python frameworks
-	supportedFrameworks := map[string]bool{
-		"flask":   true,
-		"fastapi": true,
-		"django":  true,
-		"http":    true,
-	}
-	if !supportedFrameworks[fw] {
-		return fmt.Errorf("python framework %q not supported (use flask, fastapi, or django)", frameWork)
-	}
-
-	if ar != "microservice" && ar != "monolith" {
-		return fmt.Errorf("architecture %q not supported (use microservice or monolith)", arch)
-	}
-
-	// Find base directory that contains the templates.
-	exePath, _ := os.Executable()
-	var candidates []string
-	if exePath != "" {
-		candidates = append(candidates, filepath.Dir(exePath))
-	}
-	if cwd, err := os.Getwd(); err == nil {
-		if len(candidates) == 0 || candidates[0] != cwd {
-			candidates = append(candidates, cwd)
-		}
-	}
-
-	var (
-		baseDir    string
-		scriptPath string
-	)
-
-	for _, base := range candidates {
-		p := filepath.Join(base, "templates", "python", fw, ar, "generate.sh")
-		if _, err := os.Stat(p); err == nil {
-			baseDir = base
-			scriptPath = p
-			break
-		}
-	}
-
-	if scriptPath == "" {
-		return fmt.Errorf("template script not found for python framework %q and architecture %q", fw, ar)
-	}
-
-	// Read script content and substitute project placeholder.
+func runTemplateScript(baseDir, scriptPath, project, langType string) error {
 	content, err := os.ReadFile(scriptPath)
 	if err != nil {
 		return fmt.Errorf("failed to read template script: %w", err)
 	}
 
-	// Replace {{.Project}} placeholder with actual project name
-	scriptWithProject := strings.ReplaceAll(string(content), "{{.Project}}", proj)
+	scriptWithProject := strings.ReplaceAll(string(content), "{{.Project}}", project)
+	// Some Go templates might use {{.ProjectName}}, let's handle both
+	scriptWithProject = strings.ReplaceAll(scriptWithProject, "{{.ProjectName}}", project)
 
-	// Write a temporary script next to the original so relative paths still work.
 	tmpName := fmt.Sprintf("generate-%d.sh", time.Now().UnixNano())
 	tmpPath := filepath.Join(baseDir, tmpName)
 
 	if err := os.WriteFile(tmpPath, []byte(scriptWithProject), 0o755); err != nil {
 		return fmt.Errorf("failed to write temp script: %w", err)
 	}
-	defer os.Remove(tmpPath) // best-effort cleanup
+	defer os.Remove(tmpPath)
 
 	cmd := exec.Command("bash", tmpPath)
 	cmd.Dir = baseDir
-
-	// Suppress all output for a clean TUI
 	cmd.Stdout = nil
 	cmd.Stderr = nil
 	cmd.Stdin = nil
 
-	// Set environment to suppress git hints and pip messages
 	env := os.Environ()
 	env = append(env,
 		"GIT_CONFIG_GLOBAL=/dev/null",
 		"GIT_CONFIG_SYSTEM=/dev/null",
 		"GIT_TERMINAL_PROMPT=0",
-		"PIP_NO_COLOR=1", // Disable pip colors
-		"PIP_QUIET=1",    // Quiet pip output
-		"CI=true",        // Some tools are quieter in CI mode
+		"CI=true",
 	)
+
+	switch langType {
+	case "npm":
+		env = append(env, "npm_config_fund=false", "npm_config_audit=false", "npm_config_progress=false")
+	case "python":
+		env = append(env, "PIP_NO_COLOR=1", "PIP_QUIET=1")
+	}
+
 	cmd.Env = env
 
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to run python template script: %w", err)
+		return fmt.Errorf("failed to run template script: %w", err)
 	}
 
 	return nil

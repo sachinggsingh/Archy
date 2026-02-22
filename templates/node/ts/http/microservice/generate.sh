@@ -8,13 +8,7 @@ echo "Creating HTTP microservice - TypeScript: $PROJECT_NAME"
 mkdir -p "$PROJECT_NAME"
 cd "$PROJECT_NAME"
 
-# Initialize TypeScript
-npm init -y
-npx tsc --init
-
-# Install dependencies
-npm install express dotenv
-npm install -D @types/express @types/node ts-node typescript
+echo "HTTP microservice created successfully!"
 
 # Create src directory
 mkdir -p src
@@ -112,7 +106,5 @@ EOF
 echo "HTTP microservice created successfully!"
 
 # Run build
-npm run build
 
 # Run dev
-npm run dev

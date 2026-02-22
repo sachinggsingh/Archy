@@ -11,9 +11,6 @@ cd "$PROJECT_NAME" || exit 1
 # apps container
 mkdir apps core
 
-# install env loader
-pip install python-dotenv || echo "Warning: pip install failed, continuing anyway..."
-
 # move settings into folder
 cd config
 mkdir settings

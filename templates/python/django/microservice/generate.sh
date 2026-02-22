@@ -7,8 +7,7 @@ echo "Creating Django microservice: $PROJECT_NAME"
 django-admin startproject config "$PROJECT_NAME" || exit 1
 cd "$PROJECT_NAME" || exit 1
 
-pip install djangorestframework python-dotenv || echo "Warning: pip install failed, continuing anyway..."
-
+# create structure
 mkdir apps core
 
 # create example app

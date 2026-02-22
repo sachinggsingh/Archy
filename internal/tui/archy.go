@@ -3,6 +3,7 @@ package tui
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/list"
 	bubblespinner "github.com/charmbracelet/bubbles/spinner"
@@ -18,7 +19,9 @@ import (
 var (
 	languageItems = []list.Item{
 		listcomponent.Item("JavaScript"),
+		listcomponent.Item("TypeScript"),
 		listcomponent.Item("Python"),
+		listcomponent.Item("Golang"),
 	}
 
 	frameworkItems = map[string][]list.Item{
@@ -36,6 +39,7 @@ var (
 			listcomponent.Item("Gin"),
 			listcomponent.Item("Echo"),
 			listcomponent.Item("Fiber"),
+			listcomponent.Item("gRPC"),
 		},
 		"python": {
 			listcomponent.Item("Http"),
@@ -111,8 +115,12 @@ type generatedMsg struct {
 	err error
 }
 
+type quitMsg struct{}
+
 func generateCmd(lang, fw, arch, project string) tea.Cmd {
 	return func() tea.Msg {
+		// Mock a 5-second generation process as requested
+		time.Sleep(5 * time.Second)
 		err := generator.GenerateProject(lang, fw, arch, project)
 		return generatedMsg{err: err}
 	}
@@ -149,10 +157,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.spinner.Stop()
 		if msg.err != nil {
 			m.errMsg = msg.err.Error()
-		} else {
-			m.done = true
+			m.quitting = true
+			return m, tea.Quit
 		}
+
+		m.done = true
 		m.quitting = true
+		return m, tea.Tick(2*time.Second, func(t time.Time) tea.Msg {
+			return quitMsg{}
+		})
+
+	case quitMsg:
 		return m, tea.Quit
 
 	case tea.KeyMsg:
