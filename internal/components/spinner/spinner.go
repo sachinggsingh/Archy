@@ -28,10 +28,10 @@ func New(message string, s bubblespinner.Spinner) Model {
 		Running: true,
 
 		spinnerStyle: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("129")), // Purple
+			Foreground(lipgloss.Color("#1E90FF")), // dodger blue
 
 		textStyle: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("213")), //pink
+			Foreground(lipgloss.Color("#FF69B4")), //pink
 	}
 }
 
