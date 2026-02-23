@@ -10,7 +10,9 @@
   <img src="https://img.shields.io/badge/PRs-Welcome-brightgreen?style=for-the-badge" alt="PRs Welcome"/>
 </p>
 
-<img width="472" height="455" alt="Archy TUI Screenshot" src="https://github.com/user-attachments/assets/feb89a24-3da4-4c79-8c4e-5a9215679700" />
+<img width="100%" alt="Archy TUI Screenshot" src="./archy-tui.png" />
+
+
 
 </div>
 
