@@ -119,8 +119,6 @@ type quitMsg struct{}
 
 func generateCmd(lang, fw, arch, project string) tea.Cmd {
 	return func() tea.Msg {
-		// Mock a 5-second generation process as requested
-		time.Sleep(5 * time.Second)
 		err := generator.GenerateProject(lang, fw, arch, project)
 		return generatedMsg{err: err}
 	}

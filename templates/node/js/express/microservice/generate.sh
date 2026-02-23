@@ -13,6 +13,7 @@ mkdir -p src/{middleware,route,service,utils,test,config,db,models}
 # 4. Main server - FIXED
 cd src && touch index.js
 cat > index.js << 'EOF'
+//Don't forgot to download the dependencies
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';

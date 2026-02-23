@@ -2,37 +2,35 @@
 
 PROJECT_NAME="{{.ProjectName}}"
 
-echo "Creating $PROJECT_NAME"
+echo "Creating Gin monolith: $PROJECT_NAME"
 
 mkdir -p "$PROJECT_NAME"
-cd "$PROJECT_NAME" || exit
+cd "$PROJECT_NAME" || exit 1
 
 # Initialize go module
 go mod init "$PROJECT_NAME"
 
 # Create folders
-
 mkdir -p cmd/"$PROJECT_NAME"
-mkdir -p internal/{config,handlers,models,repositories,services}
+mkdir -p internal/config internal/handlers internal/models internal/repositories internal/services
 mkdir -p pkg/logger
 
 # Create main.go
 cat <<EOF > cmd/"$PROJECT_NAME"/main.go
 package main
-import(
+
+import (
     "fmt"
     "net/http"
     "github.com/gin-gonic/gin"
 )
 
-# Dont forgot the run go mod tidy
-
 func main() {
-    fmt.Println("Hello World")
+    fmt.Printf("Starting %s...\n", "$PROJECT_NAME")
     r := gin.Default()
-    r.GET("/health",func(c *gin.Context){
-        c.JSON(http.StatusOK,gin.H{
-            "status":"ok"
+    r.GET("/health", func(c *gin.Context) {
+        c.JSON(http.StatusOK, gin.H{
+            "status": "ok",
         })
     })
     r.Run(":8080")
@@ -67,21 +65,31 @@ func GetUser(c *gin.Context) {
 EOF
 
 # Model
-cat <<EOF > internal/models/user.go
-package models
-EOF
-
+touch internal/models/user.go
 # Repository
-cat <<EOF > internal/repositories/user_repository.go
-package repositories
-EOF
-
+touch internal/repositories/user_repository.go
 # Service
-cat <<EOF > internal/services/user_service.go
-package services
+touch internal/services/user_service.go
+# Logger
+touch pkg/logger/logger.go
+
+cat > README.md <<EOF
+# $PROJECT_NAME 🚀
+
+Gin Monolith in Go
+
+## Getting Started
+
+1. Initialize dependencies:
+   \`\`\`bash
+   go mod tidy
+   \`\`\`
+
+2. Run the application:
+   \`\`\`bash
+   go run cmd/$PROJECT_NAME/main.go
+   \`\`\`
 EOF
 
-# Logger
-cat <<EOF > pkg/logger/logger.go
-package logger
-EOF
+# Run go mod tidy to ensure everything works perfectly
+# go mod tidy

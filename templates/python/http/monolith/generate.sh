@@ -68,17 +68,14 @@ def health_handler(req):
     req.wfile.write(b'{"status": "healthy"}')
 EOF
 
-cat > app/models/__init__.py << 'EOF'
-# Models for the application
-EOF
-
-cat > app/utils/__init__.py << 'EOF'
-# Utility functions
-EOF
-
 touch app/__init__.py
 touch app/handlers/__init__.py
-echo "" > requirements.txt
+touch app/models/__init__.py
+touch app/utils/__init__.py
+
+cat > requirements.txt <<EOF
+# No external dependencies required
+EOF
 
 cat > .env.example << 'EOF'
 PORT=8000
@@ -92,12 +89,7 @@ A robust Python HTTP server using only the standard library.
 
 ## Getting Started
 
-1. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. Run the server:
+1. Run the server:
    ```bash
    python main.py
    ```

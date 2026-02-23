@@ -6,15 +6,9 @@ echo "Creating Express monolith - TypeScript: $PROJECT_NAME"
 
 # Create project directory
 mkdir -p "$PROJECT_NAME"
-cd "$PROJECT_NAME"
-
-echo "Express monolith created successfully!"
+cd "$PROJECT_NAME" || exit 1
 
 # Create src directory
-mkdir -p src
-mkdir -p src/config
-mkdir -p src/db
-mkdir -p src/models
 mkdir -p src/route
 mkdir -p src/service
 mkdir -p src/test
@@ -22,6 +16,9 @@ mkdir -p src/utils
 
 # Create index.ts
 cat > src/index.ts << 'EOF'
+//  Don't forgot to download the dependencies
+
+
 import express from 'express';
 import dotenv from 'dotenv';
 

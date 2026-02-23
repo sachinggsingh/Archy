@@ -20,11 +20,12 @@ cat > package.json << 'EOF'
 EOF
 
 # 2. Create folder structure
-mkdir -p src/{middleware,routes,controllers,services,utils,test,config,db,models}
+mkdir -p src/{middleware,route,service,utils,test,config,db,models}
 
 # 4. Main server entry
 cd src && touch index.js
 cat > index.js << 'EOF'
+// Don't forgot to download the dependencies
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';

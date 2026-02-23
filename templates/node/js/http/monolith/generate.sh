@@ -13,6 +13,7 @@ mkdir -p src/{config,db,models,route,service,test,utils}
 
 # Create index.js
 cat > src/index.js << 'EOF'
+// Don't forgot to download the dependencies
 import http from 'http';
 import dotenv from 'dotenv';
 
