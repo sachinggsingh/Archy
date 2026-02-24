@@ -2,8 +2,6 @@
 
 PROJECT_NAME="{{.Project}}"
 
-mkdir -p "$PROJECT_NAME"
-cd "$PROJECT_NAME" || exit 1
 
 mkdir -p app/api app/core app/models app/schemas app/services app/db
 

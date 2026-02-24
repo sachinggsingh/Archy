@@ -1,8 +1,6 @@
+#!/bin/bash
 # No extra colors or output needed per user request
 PROJECT_NAME="{{.Project}}"
-
-mkdir -p "$PROJECT_NAME"
-cd "$PROJECT_NAME" || exit 1
 
 # 1. Create package.json
 cat > package.json << 'EOF'
@@ -20,11 +18,10 @@ cat > package.json << 'EOF'
 EOF
 
 # 2. Create folder structure
-mkdir -p src/{middleware,route,service,utils,test,config,db,models}
+mkdir -p src/{middleware,routes,controllers,service,utils,test,config,db,models}
 
 # 4. Main server entry
-cd src && touch index.js
-cat > index.js << 'EOF'
+cat > src/index.js << 'EOF'
 // Don't forgot to download the dependencies
 import express from 'express';
 import cors from 'cors';
@@ -70,8 +67,7 @@ export default app;
 EOF
 
 # 5. User routes
-cd routes
-cat > user.routes.js << 'EOF'
+cat > src/routes/user.routes.js << 'EOF'
 import { Router } from 'express';
 import { signUpController } from '../controllers/user.controller.js';
 
@@ -81,8 +77,7 @@ router.route('/users').post(signUpController);
 EOF
 
 # 6. User controller
-cd ../controllers
-cat > user.controller.js << 'EOF'
+cat > src/controllers/user.controller.js << 'EOF'
 import { signUpService } from '../services/user.service.js';
 
 export async function signUpController(req, res) {
@@ -102,8 +97,7 @@ export async function signUpController(req, res) {
 EOF
 
 # 7. User service
-cd ../services
-cat > user.service.js << 'EOF'
+cat > src/service/user.service.js << 'EOF'
 import { User } from '../models/User.model.js';
 
 export async function signUpService(payload) {
@@ -127,8 +121,7 @@ export async function signUpService(payload) {
 EOF
 
 # 8. Models stub
-cd ../models
-cat > User.model.js << 'EOF'
+cat > src/models/User.model.js << 'EOF'
 // User model schema
 // TODO: Define your DB schema (Mongoose, Prisma, etc.)
 
@@ -142,8 +135,7 @@ export class User {
 EOF
 
 # 9. DB connection stub
-cd ../db
-cat > db.js << 'EOF'
+cat > src/db/db.js << 'EOF'
 // Database connection
 // TODO: MongoDB, PostgreSQL, MySQL, etc.
 
@@ -155,8 +147,7 @@ export default connectDB;
 EOF
 
 # 10. Utils
-cd ../utils
-cat > utils.js << 'EOF'
+cat > src/utils/utils.js << 'EOF'
 export const generateResponse = (success, data, error = null) => {
   return {
     success,
@@ -172,8 +163,7 @@ export const logger = {
 EOF
 
 # 11. Config
-cd ../config
-cat > index.js << 'EOF'
+cat > src/config/index.js << 'EOF'
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -193,8 +183,7 @@ export const config = {
 EOF
 
 # 12. Tests stub
-cd ../test
-cat > health.test.js << 'EOF'
+cat > src/test/health.test.js << 'EOF'
 import request from 'supertest';
 import app from '../index.js';
 
@@ -207,7 +196,6 @@ describe('Health Check', () => {
 EOF
 
 # 13. Supporting files
-cd ../..
 cat > .env.example << 'EOF'
 PORT=8080
 NODE_ENV=development
@@ -232,4 +220,3 @@ Node.js + Express Monolith (ES Modules)
 ```bash
 ```
 EOF
-

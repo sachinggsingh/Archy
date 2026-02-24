@@ -5,45 +5,87 @@ PROJECT_NAME="{{.Project}}"
 echo "Creating Express monolith - TypeScript: $PROJECT_NAME"
 
 # Create project directory
-mkdir -p "$PROJECT_NAME"
-cd "$PROJECT_NAME" || exit 1
 
 # Create src directory
 mkdir -p src/route
 mkdir -p src/service
 mkdir -p src/test
 mkdir -p src/utils
+mkdir -p src/config
+mkdir -p src/db
+mkdir -p src/middleware
+mkdir -p src/model
 
 # Create index.ts
 cat > src/index.ts << 'EOF'
 //  Don't forgot to download the dependencies
 
 
-import express from 'express';
+import express, {Express} from 'express';
 import dotenv from 'dotenv';
+import {config} from './config/config.ts';
 
-dotenv.config();
+const app: Express = express();
 
-const app = express();
-const port = process.env.PORT || 8080;
+app.use(express.json())
 
-app.use(express.json());
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
-app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
 });
 EOF
+
+cat > src/config/config.ts << 'EOF'
+export const config = {
+server:{
+  port: process.env.PORT || 8080,
+  host: process.env.HOST || '0.0.0.0'
+},
+app:{
+  name: '{{.Project}}',
+  env: process.env.NODE_ENV || 'development'
+},
+cors:{
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000'
+}
+}
+EOF
+
+cat > src/model/model.ts << 'EOF'
+//This is your model file
+EOF
+
+cat > src/db/db.ts << 'EOF'
+//This is your db file
+EOF
+
+cat > src/utils/utils.ts << 'EOF'
+//This is your utils file
+EOF
+
+cat > src/middleware/middleware.ts << 'EOF'
+//This is your middleware file
+EOF
+
+cat > src/service/service.ts << 'EOF'
+//This is your middleware file
+EOF
+
+cat > src/route/routes.ts << 'EOF'
+//This is your routes file
+EOF
+
+
+cat > src/test/test.ts << 'EOF'
+//This is your test file
+EOF
+
 
 # Create .env
 cat > .env << 'EOF'
 PORT=8080
 NODE_ENV=development
 EOF
+
+
 
 # Create tsconfig.json
 cat > tsconfig.json << 'EOF'

@@ -107,6 +107,16 @@ func runTemplateScript(baseDir, scriptPath, project, langType string) error {
 	// Some Go templates might use {{.ProjectName}}, let's handle both
 	scriptWithProject = strings.ReplaceAll(scriptWithProject, "{{.ProjectName}}", project)
 
+	// Create project directory in CWD
+	cwd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("failed to get current working directory: %w", err)
+	}
+	projectPath := filepath.Join(cwd, project)
+	if err := os.MkdirAll(projectPath, 0o755); err != nil {
+		return fmt.Errorf("failed to create project directory: %w", err)
+	}
+
 	tmpName := fmt.Sprintf("generate-%d.sh", time.Now().UnixNano())
 	tmpPath := filepath.Join(baseDir, tmpName)
 
@@ -116,7 +126,7 @@ func runTemplateScript(baseDir, scriptPath, project, langType string) error {
 	defer os.Remove(tmpPath)
 
 	cmd := exec.Command("bash", tmpPath)
-	cmd.Dir = baseDir
+	cmd.Dir = projectPath // Execute script inside the project directory
 	cmd.Stdout = nil
 	cmd.Stderr = nil
 	cmd.Stdin = nil

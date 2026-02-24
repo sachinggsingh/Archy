@@ -4,8 +4,6 @@ PROJECT_NAME="{{.ProjectName}}"
 
 echo "Creating Gin monolith: $PROJECT_NAME"
 
-mkdir -p "$PROJECT_NAME"
-cd "$PROJECT_NAME" || exit 1
 
 # Initialize go module
 go mod init "$PROJECT_NAME"

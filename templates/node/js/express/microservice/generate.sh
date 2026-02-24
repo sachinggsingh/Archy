@@ -1,8 +1,7 @@
+#!/bin/bash
 # Simplified generation per user request
 PROJECT_NAME="{{.Project}}"
 
-mkdir -p "$PROJECT_NAME"
-cd "$PROJECT_NAME" || exit 1
 
 # 1. Initialize
 npm init -y
@@ -11,8 +10,7 @@ npm init -y
 mkdir -p src/{middleware,route,service,utils,test,config,db,models}
 
 # 4. Main server - FIXED
-cd src && touch index.js
-cat > index.js << 'EOF'
+cat > src/index.js << 'EOF'
 //Don't forgot to download the dependencies
 import express from 'express';
 import cors from 'cors';
@@ -56,19 +54,20 @@ app.listen(port, () => {
 EOF
 
 # 5. User routes - FIXED (separate file + proper imports)
-cd route && mkdir -p user
-cat > user.route.js << 'EOF'
+mkdir -p src/route/user
+cat > src/route/user.route.js << 'EOF'
 import { Router } from 'express';
 import { SignUp } from '../service/user.service.js';
 
 export const router = Router();
 
 router.route('/users').post(SignUp);
+
+export default router;
 EOF
 
 # 6. User service - FIXED (proper export)
-cd ../service
-cat > user.service.js << 'EOF'
+cat > src/service/user.service.js << 'EOF'
 import { generateResponse } from '../utils/utils.js';
 
 export async function SignUp(req, res) {
@@ -99,8 +98,7 @@ export async function SignUp(req, res) {
 EOF
 
 # 7. Models stub
-cd ../models
-cat > User.model.js << 'EOF'
+cat > src/models/User.model.js << 'EOF'
 // User model schema
 // TODO: Define your DB schema (Mongoose, Prisma, etc.)
 
@@ -114,8 +112,7 @@ export class User {
 EOF
 
 # 8. DB connection stub
-cd ../db
-cat > db.js << 'EOF'
+cat > src/db/db.js << 'EOF'
 // Database connection
 // TODO: MongoDB, PostgreSQL, MySQL, etc.
 
@@ -124,11 +121,10 @@ export const connectDB = async () => {
 };
 
 export default connectDB;
-EOF₹
+EOF
 
 # 9. Utils - FIXED
-cd ../utils
-cat > utils.js << 'EOF'
+cat > src/utils/utils.js << 'EOF'
 export const generateResponse = (success, data, error = null) => {
   return {
     success,
@@ -144,8 +140,7 @@ export const logger = {
 EOF
 
 # 10. Config
-cd ../config
-cat > index.js << 'EOF'
+cat > src/config/index.js << 'EOF'
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -165,8 +160,7 @@ export const config = {
 EOF
 
 # 11. Tests stub
-cd ../test
-cat > health.test.js << 'EOF'
+cat > src/test/health.test.js << 'EOF'
 import request from 'supertest';
 import app from '../index.js';
 
@@ -179,7 +173,6 @@ describe('Health Check', () => {
 EOF
 
 # 12. Supporting files
-cd ../..
 cat > .env.example << 'EOF'
 PORT=8080
 NODE_ENV=development
@@ -204,3 +197,5 @@ Node.js + Express + ES Modules Microservice
 ```bash
 # or
 docker compose up
+```
+EOF

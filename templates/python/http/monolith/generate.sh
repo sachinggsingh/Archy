@@ -2,8 +2,6 @@
 
 PROJECT_NAME="{{.Project}}"
 
-mkdir -p "$PROJECT_NAME/app/handlers" "$PROJECT_NAME/app/models" "$PROJECT_NAME/app/utils"
-cd "$PROJECT_NAME" || exit 1
 
 # Entry point
 cat > main.py << 'EOF'

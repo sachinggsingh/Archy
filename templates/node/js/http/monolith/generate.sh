@@ -5,8 +5,6 @@ $PROJECT_NAME = "{{.Project}}"
 echo "Creating HTTP monolith - JavaScript - HTTP-server: $PROJECT_NAME"
 
 # Create project directory
-mkdir -p "$PROJECT_NAME"
-cd "$PROJECT_NAME"
 
 # Create src directory
 mkdir -p src/{config,db,models,route,service,test,utils}

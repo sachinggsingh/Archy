@@ -5,8 +5,6 @@ PROJECT_NAME="{{.Project}}"
 echo "Creating Express microservice - TypeScript: $PROJECT_NAME"
 
 # Create project directory
-mkdir -p "$PROJECT_NAME"
-cd "$PROJECT_NAME"
 
 echo "Express microservice created successfully!"
 

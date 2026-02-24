@@ -1,11 +1,9 @@
 #!/bin/bash
 
-$PROJECT_NAME="{{.ProjectName}}"
+PROJECT_NAME="{{.ProjectName}}"
 
 echo "Creating $PROJECT_NAME"
 
-mkdir -p "$PROJECT_NAME"
-cd "$PROJECT_NAME" || exit
 
 # Initialize go module
 go mod init "$PROJECT_NAME"

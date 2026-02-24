@@ -5,8 +5,6 @@ $PROJECT_NAME = "{{.Project}}"
 echo "Creating HTTP microservice - TypeScript: $PROJECT_NAME"
 
 # Create project directory
-mkdir -p "$PROJECT_NAME"
-cd "$PROJECT_NAME"
 
 echo "HTTP microservice created successfully!"
 
