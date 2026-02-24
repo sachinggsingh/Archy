@@ -8,9 +8,13 @@
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](CONTRIBUTING.md)
 
+<br/>
+<img src="./archy-tui.png" alt="Archy TUI Demo" width="700"/>
+<br/>
+
 </div>
 
----
+
 
 ## 📖 Overview
 
@@ -55,8 +59,8 @@ Archy eliminates the tedious boilerplate setup that slows down every new project
 | Gin | ✅ | ✅ |
 | Fiber | ✅ | ✅ |
 | Echo | ✅ | ✅ |
-| net/http (Standard Library) | ✅ | — |
-| gRPC + Protobuf | — | ✅ |
+| net/http (Standard Library) | ✅ | ✅ |
+| gRPC + Protobuf | ✅ | ✅ |
 
 ---
 
