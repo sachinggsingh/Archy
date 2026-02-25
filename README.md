@@ -30,7 +30,7 @@ Archy eliminates the tedious boilerplate setup that slows down every new project
 |---|---|
 | **Interactive TUI** | Built with Bubble Tea, Lip Gloss, and Bubbles for a premium terminal experience |
 | **Smart Scaffolding** | Generates working boilerplate scripts, config files, and basic routing — not just empty folders |
-| **Multi-Language Support** | JavaScript, Python, and Go |
+| **Multi-Language Support** | JavaScript, TypeScript, Python, and Go |
 | **Dual Architecture Modes** | Choose between Monolith and Microservice patterns |
 | **Modular Templates** | Easily extensible template system for adding new languages or frameworks |
 
@@ -42,7 +42,17 @@ Archy eliminates the tedious boilerplate setup that slows down every new project
 
 | Framework | Monolith | Microservice |
 |---|:---:|:---:|
+| Http  | ✅ | ✅ |
 | Express | ✅ | ✅ |
+
+### TypeScript
+
+| Framework | Monolith | Microservice |
+|---|:---:|:---:|
+| Node | ✅ | ✅ |
+| Express | ✅ | ✅ |
+| Fastify | ✅ | ✅ |
+
 
 ### Python
 
