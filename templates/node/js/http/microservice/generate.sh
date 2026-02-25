@@ -34,6 +34,35 @@ server.listen(port, () => {
 });
 EOF
 
+cat > src/models/model.js <<'EOF'
+//This is your models file
+EOF
+
+cat > src/config/config.js << 'EOF'
+//This is config file
+EOF
+
+cat > src/db/db.js << 'EOF'
+//This is db file
+EOF
+
+cat > src/route/route.js <<'EOF'
+//This is your routes file
+EOF
+
+cat > src/service/service.js <<'EOF'
+//This is your serivce file
+EOF
+
+cat > src/utils/utils.js <<'EOF'
+//This is your utils file
+EOF
+
+cat > src/test/test.js <<'EOF'
+//This is your test file
+EOF
+
+
 # Create .env
 cat > .env << 'EOF'
 PORT=8080
