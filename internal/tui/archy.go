@@ -117,9 +117,22 @@ type generatedMsg struct {
 
 type quitMsg struct{}
 
-func generateCmd(lang, fw, arch, project string) tea.Cmd {
+type structureCreatedMsg struct {
+	langType string
+	project  string
+	err      error
+}
+
+func createStructureCmd(lang, fw, arch, project string) tea.Cmd {
 	return func() tea.Msg {
-		err := generator.GenerateProject(lang, fw, arch, project)
+		langType, proj, err := generator.CreateProjectStructure(lang, fw, arch, project)
+		return structureCreatedMsg{langType: langType, project: proj, err: err}
+	}
+}
+
+func installDepsCmd(project, langType string) tea.Cmd {
+	return func() tea.Msg {
+		err := generator.InstallDependencies(project, langType)
 		return generatedMsg{err: err}
 	}
 }
@@ -129,7 +142,7 @@ func initialModel() model {
 		step:    0,
 		input:   input.New("project-name", 40),
 		list:    listcomponent.New(languageItems, "Select Language"),
-		spinner: spinner.New("Generating project", bubblespinner.Points),
+		spinner: spinner.New("Creating project structure", bubblespinner.Points),
 	}
 	m.input.SetFocus(true)
 	return m
@@ -149,6 +162,19 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.list.SetWidth(msg.Width)
 		m.list.SetHeight(msg.Height - 22)
 		return m, nil
+
+	case structureCreatedMsg:
+		if msg.err != nil {
+			m.errMsg = msg.err.Error()
+			m.generating = false
+			m.quitting = true
+			return m, tea.Quit
+		}
+		m.spinner.SetMessage("Installing dependencies")
+		return m, tea.Batch(
+			installDepsCmd(msg.project, msg.langType),
+			m.spinner.Spinner.Tick,
+		)
 
 	case generatedMsg:
 		m.generating = false
@@ -187,7 +213,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.project = trimmed
 				m.generating = true
 				return m, tea.Batch(
-					generateCmd(m.lang, m.fw, m.arch, m.project),
+					createStructureCmd(m.lang, m.fw, m.arch, m.project),
 					m.spinner.Spinner.Tick,
 				)
 			}
