@@ -55,7 +55,6 @@ var (
 	}
 )
 
-// model holds the state for the Bubble Tea TUI.
 type model struct {
 	step int // 0: language, 1: framework, 2: architecture, 3: project name
 
@@ -266,8 +265,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) View() string {
 	renderScreen := func(content string) string {
 		if m.width > 0 && m.height > 0 {
-			// Align content to the left as requested by the user.
-			// Fixed vertical position (Top) ensures the banner stays in place.
 			return lipgloss.Place(
 				m.width,
 				m.height,

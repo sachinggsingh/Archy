@@ -49,7 +49,7 @@ Archy eliminates the tedious boilerplate setup that slows down every new project
 
 | Framework | Monolith | Microservice |
 |---|:---:|:---:|
-| Node | ✅ | ✅ |
+| Http | ✅ | ✅ |
 | Express | ✅ | ✅ |
 | Fastify | ✅ | ✅ |
 
