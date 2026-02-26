@@ -9,11 +9,11 @@ import (
 	bubblespinner "github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/sachinggsingh/archy/internal/brand"
-	"github.com/sachinggsingh/archy/internal/components/input"
-	listcomponent "github.com/sachinggsingh/archy/internal/components/list"
-	"github.com/sachinggsingh/archy/internal/components/spinner"
-	"github.com/sachinggsingh/archy/internal/generator"
+	"github.com/sachinggsingh/Archy/internal/brand"
+	"github.com/sachinggsingh/Archy/internal/components/input"
+	listcomponent "github.com/sachinggsingh/Archy/internal/components/list"
+	"github.com/sachinggsingh/Archy/internal/components/spinner"
+	"github.com/sachinggsingh/Archy/internal/generator"
 )
 
 var (

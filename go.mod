@@ -1,4 +1,4 @@
-module github.com/sachinggsingh/archy
+module github.com/sachinggsingh/Archy
 
 go 1.25.3
 

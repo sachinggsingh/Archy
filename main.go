@@ -4,8 +4,8 @@ import (
 	"os"
 
 	"github.com/mattn/go-isatty"
-	"github.com/sachinggsingh/archy/internal/brand"
-	"github.com/sachinggsingh/archy/internal/tui"
+	"github.com/sachinggsingh/Archy/internal/brand"
+	"github.com/sachinggsingh/Archy/internal/tui"
 )
 
 func main() {

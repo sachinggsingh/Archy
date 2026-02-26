@@ -80,17 +80,21 @@ Archy eliminates the tedious boilerplate setup that slows down every new project
 
 - [Go](https://golang.org/doc/install) **v1.25.3 or higher**
 
-### Build from Source
+### Install directly (Recommended)
+```bash
+go install github.com/sachinggsingh/Archy@latest
+```
 
+### Build from Source
 ```bash
 # Clone the repository
-git clone https://github.com/sachinggsingh/archy.git
+git clone https://github.com/sachinggsingh/Archy.git
 
 # Navigate into the project
-cd archy
+cd Archy
 
 # Build the binary
-go build ./cmd/archy
+go build -o archy .
 ```
 
 ---
@@ -100,7 +104,11 @@ go build ./cmd/archy
 Run Archy directly from your terminal:
 
 ```bash
-go run ./cmd/archy/main.go
+# From source
+go run .
+
+# Or run installed binary
+Archy
 ```
 
 Archy walks you through a simple **4-step wizard**:
@@ -121,9 +129,8 @@ Your scaffolded project will be generated in the current working directory. That
 Archy itself follows a clean, modular internal architecture:
 
 ```
-archy/
-├── cmd/
-│   └── archy/              # CLI entry point
+Archy/
+├── main.go                 # CLI entry point (Root)
 ├── internal/
 │   ├── brand/              # Branding & ASCII art
 │   ├── components/         # Reusable TUI components (List, Input, Spinner)
@@ -199,6 +206,6 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 
 Made with ❤️ by [sachinggsingh](https://github.com/sachinggsingh)
 
-*If Archy saves you time, consider giving it a ⭐ on [GitHub](https://github.com/sachinggsingh/archy)!*
+*If Archy saves you time, consider giving it a ⭐ on [GitHub](https://github.com/sachinggsingh/Archy)!*
 
 </div>
