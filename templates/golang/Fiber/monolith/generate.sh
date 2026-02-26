@@ -22,7 +22,7 @@ import(
     "github.com/gofiber/fiber/v2"
 )
 
-# Dont forgot the run go mod tidy
+// Dont forgot the run go mod tidy
 
 func main() {
     fmt.Println("Hello World")

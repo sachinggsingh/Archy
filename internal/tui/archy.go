@@ -106,7 +106,7 @@ var (
 	// Header style for exit messages
 	headerStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("213")).
+			Foreground(lipgloss.Color("#87CEEB")).
 			MarginLeft(4)
 )
 

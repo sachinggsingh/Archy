@@ -22,14 +22,14 @@ import(
     "github.com/gofiber/fiber/v2"
 )
 
-# Dont forgot the run go mod tidy
+// Dont forgot the run go mod tidy
 
 func main() {
     fmt.Println("Hello World")
     app := fiber.New()
     app.Get("/health",func(c *fiber.Ctx)error{
         return c.JSON(fiber.Map{
-            "status":"ok"
+            "status":"ok",
         })
     })
     app.Listen(":8080")

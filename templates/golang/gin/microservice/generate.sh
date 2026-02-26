@@ -23,7 +23,7 @@ import(
     "github.com/gin-gonic/gin"
 )
 
-# Dont forgot the run go mod tidy
+// Dont forgot the run go mod tidy
 
 func main() {
     fmt.Println("Hello World")

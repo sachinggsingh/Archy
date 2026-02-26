@@ -35,6 +35,16 @@ func main() {
 }
 EOF
 
+# Model
+touch internal/models/user.go
+# Repository
+touch internal/repositories/user_repository.go
+# Service
+touch internal/services/user_service.go
+# Logger
+touch pkg/logger.go
+
+
 # Config
 cat <<EOF > internal/config/config.go
 package config
@@ -62,14 +72,19 @@ func GetUser(c *gin.Context) {
 }
 EOF
 
-# Model
-touch internal/models/user.go
-# Repository
-touch internal/repositories/user_repository.go
-# Service
-touch internal/services/user_service.go
-# Logger
-touch pkg/logger/logger.go
+cat <<EOF > internal/models/user.go 
+package models
+EOF
+cat <<EOF > internal/services/user_service.go
+package services
+EOF
+cat <<EOF > internal/repositories/user_repository.go
+package repositories
+EOF
+
+cat <<EOF > pkg/logger.go
+package logger
+EOF
 
 cat > README.md <<EOF
 # $PROJECT_NAME 🚀
