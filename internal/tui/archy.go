@@ -169,7 +169,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.quitting = true
 			return m, tea.Quit
 		}
-		m.spinner.SetMessage("Installing dependencies")
+		m.spinner.SetMessage("Creating project structure")
 		return m, tea.Batch(
 			installDepsCmd(msg.project, msg.langType),
 			m.spinner.Spinner.Tick,
