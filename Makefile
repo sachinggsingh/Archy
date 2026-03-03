@@ -11,7 +11,10 @@ all: build test
 .PHONY: build
 build:
 	go build -ldflags "-s -w" -o $(BUILD_DIR)/$(BINARY_NAME) .
-
+# Run the cli
+.PHONY: run
+run:
+	go run main.go
 # Run tests
 .PHONY: test
 test:

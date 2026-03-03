@@ -81,6 +81,4 @@ CMD ["python", "app/main.py"]
 EOF
 fi
 
-fi
-
 
