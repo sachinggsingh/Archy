@@ -137,18 +137,11 @@ Archy/
 │   ├── generator/          # Core scaffolding logic
 │   └── tui/                # Main TUI state machine & logic
 └── templates/              # Language & framework-specific project templates
-    ├── javascript/
+    ├── templates.go        # Embedded filesystem entry point
+    ├── node/               # Node.js (JS/TS) templates
     │   └── express/
-    ├── python/
-    │   ├── fastapi/
-    │   ├── flask/
-    │   └── django/
-    └── go/
-        ├── gin/
-        ├── fiber/
-        ├── echo/
-        ├── nethttp/
-        └── grpc/
+    ├── python/             # Python (FastAPI/Flask/Django) templates
+    └── golang/             # Go templates (Gin/Fiber/Echo/gRPC)
 ```
 
 ---

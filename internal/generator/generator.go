@@ -7,13 +7,15 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/sachinggsingh/Archy/templates"
 )
 
 // CreateProjectStructure creates the folder structure using the template script.
-func CreateProjectStructure(lang, frameWork, arch, project string) (string, string, error) {
+func CreateProjectStructure(lang, framework, architecture, project string, useDocker bool) (string, string, error) {
 	normalized := strings.ToLower(strings.TrimSpace(lang))
 
-	var baseDir, scriptPath string
+	var scriptPath string
 	var err error
 	var langType string
 
@@ -23,13 +25,14 @@ func CreateProjectStructure(lang, frameWork, arch, project string) (string, stri
 		if strings.Contains(strings.ToLower(lang), "typescript") || strings.ToLower(lang) == "ts" {
 			l = "ts"
 		}
-		baseDir, scriptPath, err = findTemplatePath(filepath.Join("node", l), frameWork, arch)
+		scriptPath, err = findTemplatePath(filepath.Join("node", l), framework, architecture)
 		langType = "npm"
 	case "python", "py":
-		baseDir, scriptPath, err = findTemplatePath("python", frameWork, arch)
+		scriptPath, err = findTemplatePath("python", framework, architecture)
 		langType = "python"
 	case "go", "golang":
-		baseDir, scriptPath, err = findTemplatePath("golang", frameWork, arch)
+		scriptPath, err = findTemplatePath("golang", framework, architecture)
+
 		langType = "go"
 	default:
 		return "", "", fmt.Errorf("language %q not supported", lang)
@@ -39,8 +42,7 @@ func CreateProjectStructure(lang, frameWork, arch, project string) (string, stri
 		return "", "", err
 	}
 
-	err = runTemplateScript(baseDir, scriptPath, project)
-	if err != nil {
+	if err := runTemplateScript(scriptPath, project, useDocker); err != nil {
 		return "", "", err
 	}
 
@@ -89,17 +91,8 @@ func InstallDependencies(project, langType string) error {
 	return cmd.Run()
 }
 
-// findTemplatePath looks for the template script in candidate directories.
-func findTemplatePath(lang, framework, arch string) (string, string, error) {
-	exePath, _ := os.Executable()
-	var candidates []string
-	if exePath != "" {
-		candidates = append(candidates, filepath.Dir(exePath))
-	}
-	if cwd, err := os.Getwd(); err == nil {
-		candidates = append(candidates, cwd)
-	}
-
+// findTemplatePath looks for the template script in the embedded filesystem.
+func findTemplatePath(lang, framework, arch string) (string, error) {
 	ar := arch
 	switch ar {
 	case "micro":
@@ -111,21 +104,18 @@ func findTemplatePath(lang, framework, arch string) (string, string, error) {
 	// Framework mapping for consistency (all lowercase now)
 	fw := strings.ToLower(framework)
 
-	// Try common locations
-	for _, base := range candidates {
-		p := filepath.Join(base, "templates", lang, fw, ar, "generate.sh")
-		if _, err := os.Stat(p); err == nil {
-			return base, p, nil
-		}
+	p := filepath.Join(lang, fw, ar, "generate.sh")
+	if _, err := templates.FS.Open(p); err == nil {
+		return p, nil
 	}
 
-	return "", "", fmt.Errorf("template script not found for %s/%s/%s", lang, framework, ar)
+	return "", fmt.Errorf("template script not found for %s/%s/%s", lang, framework, ar)
 }
 
-func runTemplateScript(baseDir, scriptPath, project string) error {
-	content, err := os.ReadFile(scriptPath)
+func runTemplateScript(scriptPath, project string, useDocker bool) error {
+	content, err := templates.FS.ReadFile(scriptPath)
 	if err != nil {
-		return fmt.Errorf("failed to read template script: %w", err)
+		return fmt.Errorf("failed to read template script from embed: %w", err)
 	}
 
 	scriptWithProject := strings.ReplaceAll(string(content), "{{.Project}}", project)
@@ -142,7 +132,8 @@ func runTemplateScript(baseDir, scriptPath, project string) error {
 	}
 
 	tmpName := fmt.Sprintf("generate-%d.sh", time.Now().UnixNano())
-	tmpPath := filepath.Join(baseDir, tmpName)
+	// Use OS temp directory for the script to avoid issues with target directory permissions or cleanup
+	tmpPath := filepath.Join(os.TempDir(), tmpName)
 
 	if err := os.WriteFile(tmpPath, []byte(scriptWithProject), 0o755); err != nil {
 		return fmt.Errorf("failed to write temp script: %w", err)
@@ -151,9 +142,10 @@ func runTemplateScript(baseDir, scriptPath, project string) error {
 
 	cmd := exec.Command("bash", tmpPath)
 	cmd.Dir = projectPath
-	cmd.Stdout = nil
-	cmd.Stderr = nil
-	cmd.Stdin = nil
+	cmd.Env = append(os.Environ(),
+		fmt.Sprintf("PROJECT_NAME=%s", project),
+		fmt.Sprintf("USE_DOCKER=%t", useDocker),
+	)
 
 	return cmd.Run()
 }

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PROJECT_NAME="{{.Project}}"
+PROJECT_NAME="{{.ProjectName}}"
 
 
 # Entry point

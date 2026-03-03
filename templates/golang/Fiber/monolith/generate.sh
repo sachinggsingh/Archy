@@ -19,10 +19,15 @@ cat <<EOF > cmd/"$PROJECT_NAME"/main.go
 package main
 import(
     "fmt"
+    "log"
     "github.com/gofiber/fiber/v2"
 )
 
 // Dont forgot the run go mod tidy
+
+func Info(msg string) {
+    log.Println("[INFO] " + msg)
+}
 
 func main() {
     fmt.Println("Hello World")

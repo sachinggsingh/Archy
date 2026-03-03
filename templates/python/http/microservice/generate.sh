@@ -1,10 +1,17 @@
 #!/bin/bash
 
-PROJECT_NAME="{{.Project}}"
+PROJECT_NAME="{{.ProjectName}}"
 
 
-# Entry point
-cat > main.py << 'EOF'
+# Create 3 services
+for i in {1..3}
+do
+    SERVICE_NAME="service-$i"
+    mkdir -p "$SERVICE_NAME"/src/{api/handlers,core,models,services}
+    mkdir -p "$SERVICE_NAME"/tests
+
+    # Entry point
+    cat > "$SERVICE_NAME"/main.py << EOF
 import logging
 from src.core.server import run_server
 from src.core.config import settings
@@ -17,21 +24,21 @@ if __name__ == "__main__":
     run_server()
 EOF
 
-# Configuration
-cat > src/core/config.py << 'EOF'
+    # Configuration
+    cat > "$SERVICE_NAME"/src/core/config.py << EOF
 import os
 
 class Settings:
-    PROJECT_NAME = "{{.Project}}"
+    PROJECT_NAME = "$SERVICE_NAME"
     HOST = os.getenv("HOST", "0.0.0.0")
-    PORT = int(os.getenv("PORT", 8000))
+    PORT = int(os.getenv("PORT", $((8000 + i))))
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
 settings = Settings()
 EOF
 
-# Server setup
-cat > src/core/server.py << 'EOF'
+    # Server setup
+    cat > "$SERVICE_NAME"/src/core/server.py << 'EOF'
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from src.api.router import handle_request
 from .config import settings
@@ -49,8 +56,8 @@ def run_server():
     server.serve_forever()
 EOF
 
-# Router
-cat > src/api/router.py << 'EOF'
+    # Router
+    cat > "$SERVICE_NAME"/src/api/router.py << 'EOF'
 from src.api.handlers import health, welcome
 
 def handle_request(req):
@@ -64,34 +71,34 @@ def handle_request(req):
         req.wfile.write(b'{"error": "Not Found"}')
 EOF
 
-# Handlers
-mkdir -p src/api/handlers
-cat > src/api/handlers/health.py << 'EOF'
+    # Handlers
+    cat > "$SERVICE_NAME"/src/api/handlers/health.py << EOF
 def handle(req):
     req.send_response(200)
     req.send_header("Content-type", "application/json")
     req.end_headers()
-    req.wfile.write(b'{"status": "up"}')
+    req.wfile.write(b'{"status": "up", "service": "$SERVICE_NAME"}')
 EOF
 
-cat > src/api/handlers/welcome.py << 'EOF'
+    cat > "$SERVICE_NAME"/src/api/handlers/welcome.py << EOF
 def handle(req):
     req.send_response(200)
     req.send_header("Content-type", "application/json")
     req.end_headers()
-    req.wfile.write(b'{"message": "Welcome to Python Microservice \ud83d\ude80"}')
+    req.wfile.write(b'{"message": "Welcome to Python Microservice \ud83d\ude80", "service": "$SERVICE_NAME"}')
 EOF
 
-# services/models/etc
-touch src/services/__init__.py
-touch src/models/__init__.py
-touch src/api/__init__.py
-touch src/api/handlers/__init__.py
-touch src/core/__init__.py
-touch src/__init__.py
+    # init files
+    touch "$SERVICE_NAME"/src/services/__init__.py
+    touch "$SERVICE_NAME"/src/models/__init__.py
+    touch "$SERVICE_NAME"/src/api/__init__.py
+    touch "$SERVICE_NAME"/src/api/handlers/__init__.py
+    touch "$SERVICE_NAME"/src/core/__init__.py
+    touch "$SERVICE_NAME"/src/__init__.py
 
-# Dockerfile
-cat > Dockerfile << 'EOF'
+    # Dockerfile
+    if [ "$USE_DOCKER" = "true" ]; then
+        cat > "$SERVICE_NAME"/Dockerfile << 'EOF'
 FROM python:3.9-slim
 WORKDIR /app
 COPY requirements.txt .
@@ -99,49 +106,58 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 CMD ["python", "main.py"]
 EOF
+    fi
 
-# Docker Compose
-cat > docker-compose.yml << 'EOF'
-version: '3.8'
-services:
-  web:
-    build: .
-    ports:
-      - "8000:8000"
-    environment:
-      - HOST=0.0.0.0
-      - PORT=8000
-EOF
 
-echo "" > requirements.txt
+    echo "" > "$SERVICE_NAME"/requirements.txt
 
-# README
-cat > README.md << 'EOF'
-# Python HTTP Microservice
+    # README
+    cat > "$SERVICE_NAME"/README.md << EOF
+# Python HTTP Microservice - $SERVICE_NAME
 
 A production-ready microservice boilerplate.
-
-## Features
-- Modular architecture
-- Docker support
-- Production-ready logging
-- Configuration management
-
-## Usage
-
-### Local
-```bash
-python main.py
-```
-
-### Docker
-```bash
-docker-compose up --build
-```
 EOF
 
-# Test placeholder
-cat > tests/test_basic.py << 'EOF'
+    # Test placeholder
+    cat > "$SERVICE_NAME"/tests/test_basic.py << 'EOF'
 def test_placeholder():
     assert True
 EOF
+done
+
+# Root Docker Compose
+if [ "$USE_DOCKER" = "true" ]; then
+    cat > docker-compose.yml << EOF
+version: '3.8'
+services:
+  service-1:
+    build: ./service-1
+    ports:
+      - "8001:8001"
+  service-2:
+    build: ./service-2
+    ports:
+      - "8002:8002"
+  service-3:
+    build: ./service-3
+    ports:
+      - "8003:8003"
+EOF
+fi
+
+# Root Test Script
+if [ "$USE_TEST_SCRIPT" = "true" ]; then
+    cat > test.sh <<EOF
+#!/bin/bash
+echo "Testing services..."
+for i in {1..3}
+do
+    PORT=\$((8000 + i))
+    echo "Checking service-\$i on port \$PORT..."
+    curl -s http://localhost:\$PORT/health | grep "up" && echo "service-\$i is UP" || echo "service-\$i is DOWN"
+done
+EOF
+    chmod +x test.sh
+fi
+
+

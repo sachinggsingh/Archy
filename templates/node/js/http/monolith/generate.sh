@@ -1,6 +1,6 @@
 #!/bin/bash
 
-$PROJECT_NAME = "{{.Project}}"
+$PROJECT_NAME = "{{.ProjectName}}"
 
 echo "Creating HTTP monolith - JavaScript - HTTP-server: $PROJECT_NAME"
 
@@ -8,6 +8,28 @@ echo "Creating HTTP monolith - JavaScript - HTTP-server: $PROJECT_NAME"
 
 # Create src directory
 mkdir -p src/{config,db,models,route,service,test,utils}
+
+# Dockerfile
+if [ "$USE_DOCKER" = "true" ]; then
+    cat > Dockerfile <<EOF
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+CMD ["node", "index.js"]
+EOF
+fi
+
+# Test Script
+if [ "$USE_TEST_SCRIPT" = "true" ]; then
+    cat > test.sh <<EOF
+#!/bin/bash
+echo "Testing Node.js HTTP Monolith..."
+curl -s http://localhost:8080/health | grep "ok" && echo "Service is UP" || echo "Service is DOWN"
+EOF
+    chmod +x test.sh
+fi
 
 # Create index.js
 cat > src/index.js << 'EOF'
@@ -43,7 +65,7 @@ EOF
 # Create package.json
 cat > package.json << 'EOF'
 {
-  "name": "{{.Project}}",
+  "name": "{{.ProjectName}}",
   "version": "1.0.0",
   "description": "",
   "main": "src/index.js",

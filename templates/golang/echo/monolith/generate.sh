@@ -19,11 +19,16 @@ cat <<EOF > cmd/"$PROJECT_NAME"/main.go
 package main
 import(
     "fmt"
+    "log"
     "github.com/labstack/echo/v4"
     "net/http"
 )
 
 // Dont forgot the run go mod tidy
+
+func Info(msg string) {
+    log.Println("[INFO] " + msg)
+}
 
 func main() {
     fmt.Println("Hello World")

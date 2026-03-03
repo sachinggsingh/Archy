@@ -1,11 +1,11 @@
 #!/bin/bash
 # No extra colors or output needed per user request
-PROJECT_NAME="{{.Project}}"
+PROJECT_NAME="{{.ProjectName}}"
 
 # 1. Create package.json
 cat > package.json << 'EOF'
 {
-  "name": "{{.Project}}",
+  "name": "{{.ProjectName}}",
   "version": "1.0.0",
   "main": "src/index.js",
   "type": "module",
@@ -173,7 +173,7 @@ export const config = {
     host: process.env.HOST || '0.0.0.0'
   },
   app: {
-    name: '{{.Project}}',
+    name: '{{.ProjectName}}',
     env: process.env.NODE_ENV || 'development'
   },
   cors: {
@@ -212,7 +212,7 @@ dist/
 EOF
 
 cat > README.md << 'EOF'
-# {{.Project}} ✨
+# {{.ProjectName}} ✨
 
 Node.js + Express Monolith (ES Modules)
 
@@ -220,3 +220,26 @@ Node.js + Express Monolith (ES Modules)
 ```bash
 ```
 EOF
+
+# Dockerfile
+if [ "$USE_DOCKER" = "true" ]; then
+    cat > Dockerfile <<EOF
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+CMD ["npm", "start"]
+EOF
+fi
+
+# Test Script
+if [ "$USE_TEST_SCRIPT" = "true" ]; then
+    cat > test.sh <<EOF
+#!/bin/bash
+echo "Testing Node.js Express Monolith..."
+curl -s http://localhost:8080/health | grep "ok" && echo "Service is UP" || echo "Service is DOWN"
+EOF
+    chmod +x test.sh
+fi
+

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PROJECT_NAME="{{.Project}}"
+PROJECT_NAME="{{.ProjectName}}"
 
 echo "Creating Django monolith: $PROJECT_NAME"
 
@@ -11,6 +11,13 @@ django-admin startproject config . || exit 1
 mkdir -p apps core
 touch apps/__init__.py
 touch core/__init__.py
+
+# Create requirements.txt
+cat > requirements.txt <<EOF
+django
+django-environ
+psycopg2-binary
+EOF
 
 # Move settings into folder
 mkdir -p config/settings
@@ -37,5 +44,29 @@ EOF
 # Example app
 mkdir -p apps/users
 python manage.py startapp users apps/users
+
+# Optional: Initialize git
+# git init
+
+# Dockerfile
+if [ "$USE_DOCKER" = "true" ]; then
+    cat > Dockerfile <<EOF
+FROM python:3.9-slim
+WORKDIR /app
+RUN pip install django
+COPY . .
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+EOF
+fi
+
+# Test Script
+if [ "$USE_TEST_SCRIPT" = "true" ]; then
+    cat > test.sh <<EOF
+#!/bin/bash
+echo "Testing Django Monolith..."
+curl -s http://localhost:8000/health/ | grep "ok" && echo "Service is UP" || echo "Service is DOWN"
+EOF
+    chmod +x test.sh
+fi
 
 echo "Django monolith $PROJECT_NAME ready"

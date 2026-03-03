@@ -62,7 +62,8 @@ type model struct {
 	fw   string
 	arch string
 
-	project string
+	projectName string
+	docker      bool
 
 	input   input.Model
 	list    listcomponent.Model
@@ -122,9 +123,10 @@ type structureCreatedMsg struct {
 	err      error
 }
 
-func createStructureCmd(lang, fw, arch, project string) tea.Cmd {
+func (m model) createStructureCmd(lang, framework, arch, project string, docker bool) tea.Cmd {
 	return func() tea.Msg {
-		langType, proj, err := generator.CreateProjectStructure(lang, fw, arch, project)
+		langType, proj, err := generator.CreateProjectStructure(lang, framework, arch, project, docker)
+
 		return structureCreatedMsg{langType: langType, project: proj, err: err}
 	}
 }
@@ -204,18 +206,19 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 
-			if m.step == 3 {
+			if m.step == 4 {
 				trimmed := strings.TrimSpace(m.input.GetValue())
 				if trimmed == "" {
 					return m, nil
 				}
-				m.project = trimmed
+				m.projectName = trimmed
 				m.generating = true
 				return m, tea.Batch(
-					createStructureCmd(m.lang, m.fw, m.arch, m.project),
+					m.createStructureCmd(m.lang, m.fw, m.arch, m.projectName, m.docker),
 					m.spinner.Spinner.Tick,
 				)
 			}
+
 		}
 	}
 
@@ -225,7 +228,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 	}
 
-	if m.step < 3 {
+	if m.step < 4 {
 		var cmd tea.Cmd
 		updatedList, cmd := m.list.Update(msg)
 		m.list = updatedList.(listcomponent.Model)
@@ -241,17 +244,39 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.lang = strings.ToLower(choice)
 				fwItems := frameworkItems[m.lang]
 				m.list = listcomponent.New(fwItems, "Select Framework")
+				m.step++
 			case 1:
 				m.fw = strings.ToLower(choice)
 				m.list = listcomponent.New(architectureItems, "Select Architecture")
+				m.step++
 			case 2:
 				m.arch = strings.ToLower(choice)
+				featureItems := []list.Item{
+					listcomponent.Item("Docker support"),
+					listcomponent.Item("Skip and create project"),
+				}
+				m.list = listcomponent.New(featureItems, "Select Features")
+				m.step++
+
+			case 3:
+				switch choice {
+				case "Docker support":
+					m.docker = true
+				case "Skip and create project":
+					m.docker = false
+				}
+				m.step++
+				m.input.SetFocus(true)
 			}
-			m.step++
 			m.list.SetWidth(m.width)
-			m.list.SetHeight(m.height - 26)
+			if m.step == 4 {
+				m.input.SetFocus(true)
+			} else {
+				m.list.SetHeight(m.height - 26)
+			}
 		}
-	} else if m.step == 3 {
+	} else if m.step == 4 {
+
 		var cmd tea.Cmd
 		m.input, cmd = m.input.Update(msg)
 		if cmd != nil {
@@ -276,10 +301,7 @@ func (m model) View() string {
 		return screenStyle.Render(content)
 	}
 
-	if m.quitting {
-		if m.generating {
-			return renderScreen(headerStyle.Render("Exiting Archy..."))
-		}
+	if m.quitting && !m.generating {
 		if m.errMsg != "" {
 			banner := brand.Banner()
 			content := bannerStyle.Render(banner) + "\n\n" +
@@ -289,7 +311,7 @@ func (m model) View() string {
 		if m.done {
 			banner := brand.Banner()
 			content := bannerStyle.Render(banner) + "\n\n" +
-				headerStyle.Render(fmt.Sprintf("Project generation finished!\n\nYour project '%s' has been created successfully.", m.project))
+				headerStyle.Render(fmt.Sprintf("Project generation finished!\n\nYour project '%s' has been created successfully.", m.projectName))
 			return renderScreen(content)
 		}
 		return renderScreen(headerStyle.Render("Exiting Archy..."))
@@ -321,6 +343,16 @@ func (m model) View() string {
 		b.WriteString(mainStyle.Render(labelStyle.Bold(true).Render("Language:     ")+valueStyle.Render(m.lang)) + "\n")
 		b.WriteString(mainStyle.Render(labelStyle.Bold(true).Render("Framework:    ")+valueStyle.Render(m.fw)) + "\n")
 		b.WriteString(mainStyle.Render(labelStyle.Bold(true).Render("Architecture: ")+valueStyle.Render(m.arch)) + "\n\n")
+		inputView = mainStyle.Render(m.list.View())
+	case 4:
+		b.WriteString(mainStyle.Render(labelStyle.Bold(true).Render("Language:     ")+valueStyle.Render(m.lang)) + "\n")
+		b.WriteString(mainStyle.Render(labelStyle.Bold(true).Render("Framework:    ")+valueStyle.Render(m.fw)) + "\n")
+		b.WriteString(mainStyle.Render(labelStyle.Bold(true).Render("Architecture: ")+valueStyle.Render(m.arch)) + "\n")
+		features := "None"
+		if m.docker {
+			features = "Docker support"
+		}
+		b.WriteString(mainStyle.Render(labelStyle.Bold(true).Render("Features:     ")+valueStyle.Render(features)) + "\n\n")
 		inputView = mainStyle.Render(m.input.View())
 	}
 

@@ -1,16 +1,20 @@
 #!/bin/bash
 # Simplified generation per user request
-PROJECT_NAME="{{.Project}}"
+PROJECT_NAME="{{.ProjectName}}"
 
 
-# 1. Initialize
-npm init -y
+# Create 3 services
+for i in {1..3}
+do
+    SERVICE_NAME="service-$i"
+    mkdir -p "$SERVICE_NAME"/src/{middleware,route,service,utils,test,config,db,models}
+    cd "$SERVICE_NAME" || exit
 
-# 2. Create folder structure
-mkdir -p src/{middleware,route,service,utils,test,config,db,models}
+    # 1. Initialize
+    npm init -y > /dev/null
 
-# 4. Main server - FIXED
-cat > src/index.js << 'EOF'
+    # 4. Main server
+    cat > src/index.js << EOF
 //Don't forgot to download the dependencies
 import express from 'express';
 import cors from 'cors';
@@ -22,10 +26,7 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true,
-}));
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -33,169 +34,126 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    service: "$SERVICE_NAME",
+    timestamp: new Date().toISOString()
   });
 });
 
 // Routes
 app.use('/api/v1', userRouter);
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Endpoint not found' });
-});
-
-const port = process.env.PORT || 8080;
+const port = $((8080 + i));
 app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
-  console.log(`Health: http://localhost:${port}/health`);
+  console.log(\`$SERVICE_NAME running on http://localhost:\${port}\`);
 });
 EOF
 
-# 5. User routes - FIXED (separate file + proper imports)
-mkdir -p src/route/user
-cat > src/route/user.route.js << 'EOF'
+    # 5. User routes
+    cat > src/route/user.route.js << 'EOF'
 import { Router } from 'express';
 import { SignUp } from '../service/user.service.js';
 
 export const router = Router();
-
 router.route('/users').post(SignUp);
-
 export default router;
 EOF
 
-# 6. User service - FIXED (proper export)
-cat > src/service/user.service.js << 'EOF'
-import { generateResponse } from '../utils/utils.js';
-
+    # 6. User service
+    cat > src/service/user.service.js << EOF
 export async function SignUp(req, res) {
-  try {
-    const { name, email } = req.body;
-    
-    if (!name || !email) {
-      return res.status(400).json({
-        success: false,
-        error: 'Name and email required'
-      });
-    }
-
-    // TODO: Save to DB
-    const user = { id: Date.now(), name, email };
-    
-    return res.status(201).json({
-      success: true,
-      data: user
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
+  return res.status(201).json({
+    success: true,
+    service: "$SERVICE_NAME",
+    message: "User created"
+  });
 }
 EOF
 
-# 7. Models stub
-cat > src/models/User.model.js << 'EOF'
-// User model schema
-// TODO: Define your DB schema (Mongoose, Prisma, etc.)
-
-export class User {
-  constructor(data) {
-    this.id = data.id;
-    this.name = data.name;
-    this.email = data.email;
-  }
-}
-EOF
-
-# 8. DB connection stub
-cat > src/db/db.js << 'EOF'
-// Database connection
-// TODO: MongoDB, PostgreSQL, MySQL, etc.
-
-export const connectDB = async () => {
-  console.log(' DB connected');
-};
-
-export default connectDB;
-EOF
-
-# 9. Utils - FIXED
-cat > src/utils/utils.js << 'EOF'
-export const generateResponse = (success, data, error = null) => {
-  return {
-    success,
-    data: success ? data : null,
-    error: success ? null : error
-  };
-};
-
+    # 9. Utils
+    cat > src/utils/utils.js << 'EOF'
 export const logger = {
   info: (msg) => console.log(`[INFO] ${new Date().toISOString()} ${msg}`),
   error: (msg) => console.error(`[ERROR] ${new Date().toISOString()} ${msg}`)
 };
 EOF
 
-# 10. Config
-cat > src/config/index.js << 'EOF'
+    # 10. Config
+    cat > src/config/index.js << EOF
 import dotenv from 'dotenv';
 dotenv.config();
 
 export const config = {
   server: {
-    port: process.env.PORT || 8080,
+    port: process.env.PORT || $((8080 + i)),
     host: process.env.HOST || '0.0.0.0'
-  },
-  app: {
-    name: '{{.Project}}',
-    env: process.env.NODE_ENV || 'development'
-  },
-  cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000'
   }
 };
 EOF
 
-# 11. Tests stub
-cat > src/test/health.test.js << 'EOF'
-import request from 'supertest';
-import app from '../index.js';
-
-describe('Health Check', () => {
-  it('should return 200', async () => {
-    const res = await request(app).get('/health');
-    expect(res.status).toBe(200);
-  });
-});
-EOF
-
-# 12. Supporting files
-cat > .env.example << 'EOF'
-PORT=8080
+    # 12. Supporting files
+    cat > .env << EOF
+PORT=$((8080 + i))
 NODE_ENV=development
-FRONTEND_URL=http://localhost:3000
 EOF
 
-cat > .gitignore << 'EOF'
+    cat > .gitignore << 'EOF'
 node_modules/
 .env
-*.log
-.DS_Store
-coverage/
-dist/
 EOF
 
-cat > README.md << 'EOF'
-# {{.Project}} 
+    # Update package.json for ESM
+    sed -i '' 's/"main": "index.js"/"main": "src\/index.js",\n  "type": "module"/g' package.json
 
-Node.js + Express + ES Modules Microservice
-
-## Quick Start
-```bash
-# or
-docker compose up
-```
+    # Dockerfile
+    if [ "$USE_DOCKER" = "true" ]; then
+        cat > "$SERVICE_NAME"/Dockerfile <<EOF
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+CMD ["node", "index.js"]
 EOF
+    fi
+
+    cd .. || exit
+done
+
+# Root Docker Compose
+if [ "$USE_DOCKER" = "true" ]; then
+    cat > docker-compose.yml <<EOF
+version: '3.8'
+services:
+  service-1:
+    build: ./service-1
+    ports:
+      - "8081:8081"
+  service-2:
+    build: ./service-2
+    ports:
+      - "8082:8082"
+  service-3:
+    build: ./service-3
+    ports:
+      - "8083:8083"
+EOF
+fi
+
+# Root Test Script
+if [ "$USE_TEST_SCRIPT" = "true" ]; then
+    cat > test.sh <<EOF
+#!/bin/bash
+echo "Testing Node.js services..."
+for i in {1..3}
+do
+    PORT=\$((8080 + i))
+    echo "Checking service-\$i on port \$PORT..."
+    curl -s http://localhost:\$PORT/health | grep "ok" && echo "service-\$i is UP" || echo "service-\$i is DOWN"
+done
+EOF
+    chmod +x test.sh
+fi
+
+
+echo "Node Express microservices ready"
+

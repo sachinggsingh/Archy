@@ -5,6 +5,32 @@ PROJECT_NAME="{{.ProjectName}}"
 echo "Creating $PROJECT_NAME"
 
 
+# Optional bit: git init
+# git init
+
+# Dockerfile
+if [ "$USE_DOCKER" = "true" ]; then
+    cat <<EOF > Dockerfile
+FROM golang:1.21-alpine
+WORKDIR /app
+COPY go.mod ./
+RUN go mod download
+COPY . .
+RUN go build -o main cmd/"$PROJECT_NAME"/main.go
+CMD ["./main"]
+EOF
+fi
+
+# Test Script
+if [ "$USE_TEST_SCRIPT" = "true" ]; then
+    cat > test.sh <<EOF
+#!/bin/bash
+echo "Testing gRPC Monolith..."
+nc -zv localhost 50051 && echo "Service is UP" || echo "Service is DOWN"
+EOF
+    chmod +x test.sh
+fi
+
 # Initialize go module
 go mod init "$PROJECT_NAME"
 

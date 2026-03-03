@@ -66,7 +66,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
-		case "q", "ctrl+c":
+		case "ctrl+c":
 			m.quitting = true
 			return m, tea.Quit
 
@@ -75,7 +75,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if ok {
 				m.choice = string(i)
 			}
-			// Don't quit, just set the choice
 			return m, nil
 		}
 	}
@@ -86,12 +85,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	if m.choice != "" {
-		return quitTextStyle.Render(fmt.Sprintf("%s? Sounds good to me.", m.choice))
-	}
-	if m.quitting {
-		return quitTextStyle.Render("Not hungry? That’s cool.")
-	}
 	return m.list.View()
 }
 

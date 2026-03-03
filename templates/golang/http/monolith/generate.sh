@@ -88,3 +88,27 @@ func Info(msg string) {
     log.Println("[INFO] " + msg)
 }
 EOF
+
+# Dockerfile
+if [ "$USE_DOCKER" = "true" ]; then
+    cat <<EOF > Dockerfile
+FROM golang:1.21-alpine
+WORKDIR /app
+COPY go.mod ./
+RUN go mod download
+COPY . .
+RUN go build -o main cmd/"$PROJECT_NAME"/main.go
+CMD ["./main"]
+EOF
+fi
+
+# Test Script
+if [ "$USE_TEST_SCRIPT" = "true" ]; then
+    cat > test.sh <<EOF
+#!/bin/bash
+echo "Testing HTTP Monolith..."
+curl -s http://localhost:8080/health | grep "OK" && echo "Service is UP" || echo "Service is DOWN"
+EOF
+    chmod +x test.sh
+fi
+

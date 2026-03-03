@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PROJECT_NAME="{{.Project}}"
+PROJECT_NAME="{{.ProjectName}}"
 
 echo "Creating Fastify monolith - TypeScript: $PROJECT_NAME"
 
@@ -72,7 +72,7 @@ EOF
 # Create package.json scripts
 cat > package.json << 'EOF'
 {
-  "name": "{{.Project}}",
+  "name": "{{.ProjectName}}",
   "version": "1.0.0",
   "description": "",
   "main": "dist/index.js",
@@ -104,7 +104,31 @@ dist
 .env
 EOF
 
+# Dockerfile
+if [ "$USE_DOCKER" = "true" ]; then
+    cat > Dockerfile <<EOF
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+CMD ["npm", "start"]
+EOF
+fi
+
+# Test Script
+if [ "$USE_TEST_SCRIPT" = "true" ]; then
+    cat > test.sh <<EOF
+#!/bin/bash
+echo "Testing TypeScript Fastify Monolith..."
+curl -s http://localhost:8080/health | grep "ok" && echo "Service is UP" || echo "Service is DOWN"
+EOF
+    chmod +x test.sh
+fi
+
 echo "Fastify monolith created successfully!"
+
 
 # Run build
 
