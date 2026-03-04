@@ -102,8 +102,8 @@ dist
 EOF
 
     # Dockerfile
-    if [ "$USE_DOCKER" = "true" ]; then
-        cat > "$SERVICE_NAME"/Dockerfile <<EOF
+if [ "$USE_DOCKER" = "true" ]; then
+    cat > Dockerfile <<EOF
 FROM node:18-alpine
 WORKDIR /app
 COPY package*.json ./
@@ -137,20 +137,7 @@ services:
 EOF
 fi
 
-# Root Test Script
-if [ "$USE_TEST_SCRIPT" = "true" ]; then
-    cat > test.sh <<EOF
-#!/bin/bash
-echo "Testing Node.js TypeScript services..."
-for i in {1..3}
-do
-    PORT=\$((8080 + i))
-    echo "Checking service-\$i on port \$PORT..."
-    curl -s http://localhost:\$PORT/health | grep "ok" && echo "service-\$i is UP" || echo "service-\$i is DOWN"
-done
-EOF
-    chmod +x test.sh
-fi
+
 
 
 echo "TypeScript Express microservices created successfully!"
