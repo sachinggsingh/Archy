@@ -139,21 +139,5 @@ services:
 EOF
 fi
 
-# Root Test Script
-if [ "$USE_TEST_SCRIPT" = "true" ]; then
-    cat > test.sh <<EOF
-#!/bin/bash
-echo "Testing Node.js services..."
-for i in {1..3}
-do
-    PORT=\$((8080 + i))
-    echo "Checking service-\$i on port \$PORT..."
-    curl -s http://localhost:\$PORT/health | grep "ok" && echo "service-\$i is UP" || echo "service-\$i is DOWN"
-done
-EOF
-    chmod +x test.sh
-fi
-
-
-echo "Node Express microservices ready"
+  echo "Node Express microservices created successfully! $PROJECT_NAME"
 

@@ -21,15 +21,6 @@ CMD ["node", "index.js"]
 EOF
 fi
 
-# Test Script
-if [ "$USE_TEST_SCRIPT" = "true" ]; then
-    cat > test.sh <<EOF
-#!/bin/bash
-echo "Testing Node.js HTTP Monolith..."
-curl -s http://localhost:8080/health | grep "ok" && echo "Service is UP" || echo "Service is DOWN"
-EOF
-    chmod +x test.sh
-fi
 
 # Create index.js
 cat > src/index.js << 'EOF'
