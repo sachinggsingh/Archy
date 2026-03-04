@@ -93,7 +93,6 @@ done
 # Root Docker Compose
 if [ "$USE_DOCKER" = "true" ]; then
     cat > docker-compose.yml <<EOF
-version: '3.8'
 services:
   service-1:
     build: ./service-1
@@ -108,19 +107,4 @@ services:
     ports:
       - "8083:8083"
 EOF
-fi
-
-# Root Test Script
-if [ "$USE_TEST_SCRIPT" = "true" ]; then
-    cat > test.sh <<EOF
-#!/bin/bash
-echo "Testing Gin services..."
-for i in {1..3}
-do
-    PORT=\$((8080 + i))
-    echo "Checking service-\$i on port \$PORT..."
-    curl -s http://localhost:\$PORT/health | grep "ok" && echo "service-\$i is UP" || echo "service-\$i is DOWN"
-done
-EOF
-    chmod +x test.sh
 fi

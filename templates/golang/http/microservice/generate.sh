@@ -115,17 +115,3 @@ services:
 EOF
 fi
 
-# Root Test Script
-if [ "$USE_TEST_SCRIPT" = "true" ]; then
-    cat > test.sh <<EOF
-#!/bin/bash
-echo "Testing Go services..."
-for i in {1..3}
-do
-    PORT=\$((8080 + i))
-    echo "Checking service-\$i on port \$PORT..."
-    curl -s http://localhost:\$PORT/health | grep "OK" && echo "service-\$i is UP" || echo "service-\$i is DOWN"
-done
-EOF
-    chmod +x test.sh
-fi

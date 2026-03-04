@@ -201,21 +201,5 @@ services:
 EOF
 fi
 
-# Root Test Script
-if [ "$USE_TEST_SCRIPT" = "true" ]; then
-    cat > test.sh <<EOF
-#!/bin/bash
-echo "Testing gRPC services..."
-# gRPC curl requires specific tools, just checking if port is open
-for i in {1..3}
-do
-    PORT=\$((50050 + i))
-    echo "Checking service-\$i on port \$PORT..."
-    nc -zv localhost \$PORT && echo "service-\$i is UP" || echo "service-\$i is DOWN"
-done
-EOF
-    chmod +x test.sh
-fi
-
 
 

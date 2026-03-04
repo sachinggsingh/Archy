@@ -14,6 +14,19 @@ mkdir -p cmd/"$PROJECT_NAME"
 mkdir -p internal/{config,handlers,models,repositories,services}
 mkdir -p pkg/logger
 
+#Dockerfile
+if [ "$USE_DOCKER" = "true" ]; then
+    cat <<EOF > Dockerfile
+FROM golang:1.21-alpine
+WORKDIR /app
+COPY go.mod ./
+RUN go mod download
+COPY . .
+RUN go build -o main cmd/"$PROJECT_NAME"/main.go
+CMD ["./main"]
+EOF
+fi
+
 # Create main.go
 cat <<EOF > cmd/"$PROJECT_NAME"/main.go
 package main

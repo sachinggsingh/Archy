@@ -21,15 +21,6 @@ CMD ["./main"]
 EOF
 fi
 
-# Test Script
-if [ "$USE_TEST_SCRIPT" = "true" ]; then
-    cat > test.sh <<EOF
-#!/bin/bash
-echo "Testing gRPC Monolith..."
-nc -zv localhost 50051 && echo "Service is UP" || echo "Service is DOWN"
-EOF
-    chmod +x test.sh
-fi
 
 # Initialize go module
 go mod init "$PROJECT_NAME"
