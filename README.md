@@ -8,7 +8,7 @@
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](CONTRIBUTING.md)
 
-<video src="./assets/archy-video.mov" width="700" controls></video>
+<video src="./assets/archy-video.mp4" width="700" controls></video>
 <br/>
 <img src="./assets/archy-tui.png" alt="Archy TUI Demo" width="700"/>
 
