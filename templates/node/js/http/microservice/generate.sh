@@ -1,6 +1,6 @@
 #!/bin/bash
 
-$PROJECT_NAME = "{{.ProjectName}}"
+PROJECT_NAME="{{.ProjectName}}"
 
 echo "Creating HTTP microservice - JavaScript - HTTP-server: $PROJECT_NAME"
 
@@ -75,17 +75,17 @@ EOF
 
     # Dockerfile
     if [ "$USE_DOCKER" = "true" ]; then
-        cat > "$SERVICE_NAME"/Dockerfile <<EOF
+    cat > Dockerfile <<EOF
 FROM node:18-alpine
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
-CMD ["node", "index.js"]
+CMD ["node", "src/index.js"]
 EOF
     fi
 
-    cd .. || exit
+cd .. || exit
 done
 
 # Root Docker Compose

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-$PROJECT_NAME = "{{.ProjectName}}"
+PROJECT_NAME="{{.ProjectName}}"
 
 echo "Creating HTTP monolith - JavaScript - HTTP-server: $PROJECT_NAME"
 
@@ -17,7 +17,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
-CMD ["node", "index.js"]
+CMD ["node", "src/index.js"]
 EOF
 fi
 
