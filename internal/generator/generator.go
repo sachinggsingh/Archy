@@ -49,48 +49,6 @@ func CreateProjectStructure(lang, framework, architecture, project string, useDo
 	return langType, project, nil
 }
 
-// InstallDependencies runs the package manager to install dependencies.
-func InstallDependencies(project, langType string) error {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-	projectPath := filepath.Join(cwd, project)
-
-	var cmd *exec.Cmd
-	switch langType {
-	case "npm":
-		cmd = exec.Command("npm", "install")
-	case "go":
-		cmd = exec.Command("go", "mod", "tidy")
-	case "python":
-		// Assuming requirements.txt exists and pip is available
-		cmd = exec.Command("pip", "install", "-r", "requirements.txt")
-	default:
-		return nil // No dependencies to install or unknown type
-	}
-
-	cmd.Dir = projectPath
-
-	env := os.Environ()
-	env = append(env,
-		"GIT_CONFIG_GLOBAL=/dev/null",
-		"GIT_CONFIG_SYSTEM=/dev/null",
-		"GIT_TERMINAL_PROMPT=0",
-		"CI=true",
-	)
-
-	switch langType {
-	case "npm":
-		env = append(env, "npm_config_fund=false", "npm_config_audit=false", "npm_config_progress=false")
-	case "python":
-		env = append(env, "PIP_NO_COLOR=1", "PIP_QUIET=1")
-	}
-	cmd.Env = env
-
-	return cmd.Run()
-}
-
 // findTemplatePath looks for the template script in the embedded filesystem.
 func findTemplatePath(lang, framework, arch string) (string, error) {
 	ar := arch

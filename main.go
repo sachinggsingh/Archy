@@ -17,12 +17,11 @@ func main() {
 	arch := flag.String("arch", "", "Architecture (monolith/microservice)")
 	project := flag.String("project", "", "Project name")
 	docker := flag.Bool("docker", false, "Enable Docker support")
-	skipDeps := flag.Bool("skip-deps", false, "Skip dependency installation")
 	flag.Parse()
 
 	if *lang != "" && *fw != "" && *arch != "" && *project != "" {
 		fmt.Printf("Generating %s project '%s' using %s with %s architecture...\n", *lang, *project, *fw, *arch)
-		langType, proj, err := generator.CreateProjectStructure(*lang, *fw, *arch, *project, *docker)
+		_, proj, err := generator.CreateProjectStructure(*lang, *fw, *arch, *project, *docker)
 
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
@@ -30,16 +29,7 @@ func main() {
 		}
 		fmt.Printf("Project structure created at ./%s\n", proj)
 
-		if !*skipDeps {
-			fmt.Println("Installing dependencies...")
-			if err := generator.InstallDependencies(proj, langType); err != nil {
-				fmt.Fprintf(os.Stderr, "Error installing dependencies: %v\n", err)
-				os.Exit(1)
-			}
-		} else {
-			fmt.Println("Skipping dependency installation.")
-		}
-		fmt.Println("Project generated successfully! 🚀")
+		fmt.Println("Project generated successfully!")
 		return
 	}
 

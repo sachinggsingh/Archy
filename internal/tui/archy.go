@@ -22,6 +22,7 @@ var (
 		listcomponent.Item("TypeScript"),
 		listcomponent.Item("Python"),
 		listcomponent.Item("Golang"),
+		listcomponent.Item("Exit Archy"),
 	}
 
 	frameworkItems = map[string][]list.Item{
@@ -117,12 +118,15 @@ type generatedMsg struct {
 
 type quitMsg struct{}
 
+type resetMsg struct{}
+
 type structureCreatedMsg struct {
 	langType string
 	project  string
 	err      error
 }
 
+// creating the folder
 func (m model) createStructureCmd(lang, framework, arch, project string, docker bool) tea.Cmd {
 	return func() tea.Msg {
 		langType, proj, err := generator.CreateProjectStructure(lang, framework, arch, project, docker)
@@ -131,17 +135,10 @@ func (m model) createStructureCmd(lang, framework, arch, project string, docker 
 	}
 }
 
-func installDepsCmd(project, langType string) tea.Cmd {
-	return func() tea.Msg {
-		err := generator.InstallDependencies(project, langType)
-		return generatedMsg{err: err}
-	}
-}
-
 func initialModel() model {
 	m := model{
 		step:    0,
-		input:   input.New("project-name", 40),
+		input:   input.New("project-name", 15),
 		list:    listcomponent.New(languageItems, "Select Language"),
 		spinner: spinner.New("Creating project structure", bubblespinner.Points),
 	}
@@ -169,13 +166,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.errMsg = msg.err.Error()
 			m.generating = false
 			m.quitting = true
-			return m, tea.Quit
+			return m, tea.Tick(4*time.Second, func(t time.Time) tea.Msg {
+				return resetMsg{}
+			})
 		}
-		m.spinner.SetMessage("Creating project structure")
-		return m, tea.Batch(
-			installDepsCmd(msg.project, msg.langType),
-			m.spinner.Spinner.Tick,
-		)
+		return m, func() tea.Msg {
+			return generatedMsg{err: nil}
+		}
 
 	case generatedMsg:
 		m.generating = false
@@ -183,17 +180,33 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.err != nil {
 			m.errMsg = msg.err.Error()
 			m.quitting = true
-			return m, tea.Quit
+			return m, tea.Tick(4*time.Second, func(t time.Time) tea.Msg {
+				return resetMsg{}
+			})
 		}
 
 		m.done = true
 		m.quitting = true
-		return m, tea.Tick(2*time.Second, func(t time.Time) tea.Msg {
-			return quitMsg{}
+		return m, tea.Tick(3*time.Second, func(t time.Time) tea.Msg {
+			return resetMsg{}
 		})
 
 	case quitMsg:
 		return m, tea.Quit
+
+	case resetMsg:
+		m.step = 0
+		m.done = false
+		m.quitting = false
+		m.errMsg = ""
+		m.lang = ""
+		m.fw = ""
+		m.arch = ""
+		m.projectName = ""
+		m.docker = false
+		m.input.SetValue("")
+		m.list = listcomponent.New(languageItems, "Select Language")
+		return m, nil
 
 	case tea.KeyMsg:
 		switch msg.Type {
@@ -241,6 +254,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.list.ClearChoice()
 			switch m.step {
 			case 0:
+				if choice == "Exit Archy" {
+					m.quitting = true
+					return m, tea.Quit
+				}
 				m.lang = strings.ToLower(choice)
 				fwItems := frameworkItems[m.lang]
 				m.list = listcomponent.New(fwItems, "Select Framework")
@@ -358,9 +375,9 @@ func (m model) View() string {
 
 	b.WriteString(inputView + "\n\n")
 
-	helpText := "Enter to confirm · Ctrl+C / Esc to quit"
+	helpText := "Enter to confirm | to exit press CTRL+C"
 	if m.step < 3 {
-		helpText = "↑/↓ move · Enter to confirm · Ctrl+C / Esc to quit"
+		helpText = "↑/↓ move | Enter to confirm | to exit press CTRL+C"
 	}
 	b.WriteString(mainStyle.Render(textStyle.Faint(true).Render(helpText)) + "\n")
 
